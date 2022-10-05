@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block css_header %}
+   .my_padding {
+    padding: 10px;
+    }
+    .my_height{
+    height: 600px
+    }
+    <!--.content{position: absolute; top: 200px; left: 200px; clip: rect(0px, 640px, 300px, 0px); width:900px; height:600px;}-->
+    .canvas{ position:relative; width:950px; height:550px; }
+    .videoContainer{ position:absolute; width:100%; height:100%; }
+    .svgContainer{ position:absolute; width:100%; height:100%; }
+
+    .normal_Anno{fill:blue;stroke:red;stroke-width:3;fill-opacity:0.1;stroke-opacity:0.9}
+    .active_Anno{fill-opacity:0.5;}
+
+    .normal_label_button{}
+
+    .ZINDEX{position: relative; z-index: 3;}
+{% endblock %}
+
+
+{% block data_button %}
+{% for data_object in data_objects %}
+<button class="list-group-item list-group-item-action" onclick="Highlight_data_item(this)" id="{{data_object.id}}">{{data_object.filename}}</button>
+{%endfor%}
+{% endblock %}
+
+
+
+
+
+{% block import_data_modal %}
+<!-- Modal Import Data -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Import Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="container-fluid my_padding">{{ field.label }} : {{field}}</div>
+                    {%endfor%}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block import_data %}
+<li class="nav-item">
+    <button type="button" class="btn btn-primary" id="btnAddData">
+        Import Data
+    </button>
+</li>
+{% endblock %}
+
+
+{% block media_container %}
+<div class="container-fluid">
+    <div class="container-fluid">
+        <div id="myCanvas" class="border border-primary canvas">
+            <video id="videoContainer" class="videoContainer">
+            </video>
+            <svg id="svgContainer" class="border border-primary svgContainer">
+            </svg>
+        </div>
+    </div>
+    <div class="container-fluid ZINDEX">
+        <span id="total_frame_num"></span>
+        <label for="customRange1" class="form-label" id="show_frame">0</label>
+        <input type="range" class="form-range p-3 mb-2 bg-secondary text-white" id="customRange1" max="100"
+               oninput="showVal(this.value)">
+    </div>
+
+    <div class="container-fluid">
+        <input class="form-control me-2" type="search" placeholder="10" value="10" style="width:100px"
+               id="current_interval">
+        <button class="btn btn-outline-success" type="submit" onclick="set_interval()">Set Frame Interval</button>
+    </div>
+
+    <div class="container-fluid ZINDEX">
+        <button class="btn btn-outline-success" type="submit" onclick="zoom('in')">ZOOM IN</button>
+        <button class="btn btn-outline-success" type="submit" onclick="zoom('out')">ZOOM OUT</button>
+        <button class="btn btn-outline-success" type="submit" onclick="play()">Play/Pause</button>
+        <button class="btn btn-outline-success" type="submit" onclick="mute()">Mute/Unmute</button>
+        <button class="btn btn-outline-success" type="submit" onclick="playrate()">x2</button>
+    </div>
+
+</div>
+{% endblock %}
+
+
+{% block javascript_content %}
+<script type="text/javascript">
+// video document object
+let video = document.getElementById("videoContainer");
+var video_width, video_height, video_show_w, video_show_h, add;
+
+// input-range document object
+var x = document.getElementById("customRange1");
+x.value = 0;
+
+var frame_num = document.getElementById("show_frame");
+frame_num.textContent = 0;
+
+// document to add label button
+var annotation_label_container   = document.getElementById("label_container");
+
+// Document object to add children of rectanglar tag
+var svg   = document.getElementById("svgContainer");
+var svgNS = svg.namespaceURI;
+
+// Document object of canvas
+var canvas = document.getElementById("myCanvas");
+
+// Rect used for modified
+var rectModify;
+
+//label data
+var data,  total_frame_num;
+var current_frame = 0;
+var frame_name = "frame_" + current_frame;
+
+$("#btnAddData").click(function () {
+    $('#staticBackdrop').modal('show');
+});
+
+$(btnExport).click(function (){
+window.location.href = window.location.href + "export";
+})
+
+$(btnDeleteProject).click(function (){
+window.location.href = window.location.href + "delete";
+})
+
+$("#createAnno").attr('onClick', 'Create_anno();');
+$("#deleteAnno").attr('onClick', 'Delete_anno();');
+$("#submitData").attr('onClick', 'submit_label();');
+
+function Highlight_data_item(button) {
+   x.value = 0;
+   $(".col-2 .active").removeClass("active");
+   $(button).addClass("active");
+   video.src = "/media/" + button.textContent;
+
+   x.value = 0;
+   frame_num.textContent = 0;
+   clear_anno();
+   $.ajax({
+            url: '/Video/ajax_getdata',
+            type: "get",
+            data: {
+                id: button.id
+            },
+            dataType: "JSON",
+            success: function (res) {
+                data = res.data;
+                total_frame_num = res.video_info["frame_num"];
+                frame_name = "frame_0";
+
+                video_width = res.video_info["width"];
+                video_height = res.video_info["height"];
+                video_show_w = 950;
+                video_show_h = video_height/video_width*950;
+                add = (550 - video_show_h)/2;
+
+                if (frame_name in data){
+                    for (let i = 0; i < data[frame_name].length; i++) {
+                        data_label = data[frame_name][i];
+                        create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
+                    }
+                }
+                set_interval();
+            }
+        })
+
+}
+
+
+function Create_anno(){
+    var  xStart, yStart, xEnd, yEnd, rect;
+
+    canvas.addEventListener("mousedown", mouseDown);
+    canvas.addEventListener("mouseup", mouseUp);
+}
+
+function mouseDown(e) {
+    xStart = e.offsetX;
+    yStart = e.offsetY;
+    label_oreder = create_label(xStart, yStart, 5, 5);
+    rect = document.getElementById("labelbutton_" + label_oreder);
+    canvas.addEventListener('mousemove', mouseMove);
+}
+
+function mouseMove(e){
+    xEnd = e.offsetX;
+    yEnd = e.offsetY;
+    reset_rect_shape(rect,xStart,yStart,xEnd-xStart, yEnd-yStart);
+}
+
+function mouseUp(e) {
+    xEnd = e.offsetX;
+    yEnd = e.offsetY;
+    if (xStart != xEnd && yStart != yEnd) {
+
+        if ((frame_name in data) == false){
+            data[frame_name] = [];
+        }
+        data[frame_name] = data[frame_name].concat([[xStart/video_show_w, (yStart-add)/video_show_h, (xEnd-xStart)/video_show_w, (yEnd-yStart)/video_show_h],]);
+
+    }
+canvas.removeEventListener("mousemove", mouseMove);
+canvas.removeEventListener("mousedown", mouseDown);
+canvas.removeEventListener("mouseup", mouseUp);
+}
+
+function modifyAnno(e) {
+    var xStart = e.offsetX;
+    var yStart = e.offsetY;
+    if (xStart <= parseInt(rectModify.getAttribute("x")) + 10 && yStart <= parseInt(rectModify.getAttribute("y")) + 10) {
+        canvas.addEventListener('mousemove', modifyMoveLU);
+        canvas.addEventListener("mouseup", modifyUpLU);
+    }
+
+    if (xStart >=  parseInt(rectModify.getAttribute("x")) + parseInt(rectModify.getAttribute("width")) - 10 && yStart >=  parseInt(rectModify.getAttribute("y")) + parseInt(rectModify.getAttribute("height")) - 10) {
+        canvas.addEventListener('mousemove', modifyMoveRD);
+        canvas.addEventListener("mouseup", modifyUpRD);
+    }
+}
+
+function modifyMoveLU(e) {
+    newxStart = e.offsetX;
+    newyStart = e.offsetY;
+
+    newxEnd = parseInt(rectModify.getAttribute("x")) + parseInt(rectModify.getAttribute("width"));
+    newyEnd = parseInt(rectModify.getAttribute("y")) + parseInt(rectModify.getAttribute("height"));
+
+    reset_rect_shape(rectModify,newxStart,newyStart,newxEnd-newxStart, newyEnd-newyStart);
+}
+
+function modifyUpLU(e) {
+    canvas.removeEventListener('mousemove', modifyMoveLU);
+    canvas.removeEventListener("mouseup", modifyUpLU);
+    if (newxStart != newxEnd && newyStart != newyEnd) {
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][0] = newxStart/video_show_w;
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][1] = (newyStart-add)/video_show_h;
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][2] = (newxEnd-newxStart)/video_show_w;
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][3] = (newyEnd-newyStart)/video_show_h;
+    }
+}
+
+function modifyMoveRD(e) {
+    newxEnd = e.offsetX;
+    newyEnd = e.offsetY;
+
+    newxStart = parseInt(rectModify.getAttribute("x"));
+    newyStart = parseInt(rectModify.getAttribute("y"));
+
+    reset_rect_shape(rectModify,newxStart,newyStart,newxEnd-newxStart, newyEnd-newyStart);
+}
+
+function modifyUpRD(e) {
+    canvas.removeEventListener('mousemove', modifyMoveRD);
+    canvas.removeEventListener("mouseup", modifyUpRD);
+    if (newxStart != newxEnd && newyStart != newyEnd) {
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][0] = newxStart/video_show_w;
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][1] = (newyStart-add)/video_show_h;
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][2] = (newxEnd-newxStart)/video_show_w;
+        data[frame_name][parseInt(rectModify.id.replace("labelbutton_",""))-1][3] = (newyEnd-newyStart)/video_show_h;
+    }
+}
+
+function reset_rect_shape(rect,x,y,w,h){
+    rect.setAttribute('x',x);
+    rect.setAttribute('y',y);
+    rect.setAttribute('width',w);
+    rect.setAttribute('height',h);
+}
+
+function Highlight_Anno(e) {
+    if (e.tagName == "rect"){
+        if (rectModify){
+            rectModify.removeEventListener("mousedown", modifyAnno);
+        }
+        rectModify = e
+        const collection = document.getElementsByClassName("active_Anno");
+        if (collection.length != 0) {
+            collection[0].classList.remove('active_Anno');
+        }
+        rectModify.classList.add('active_Anno');
+        rectModify.addEventListener("mousedown", modifyAnno);
+        var button_label = document.getElementsByName(rectModify.id.replace("labelbutton_",""))
+        $(".col-3 .active").removeClass("active");
+        $(button_label).addClass("active");
+    } else {
+        var button = e
+        $(".col-3 .active").removeClass("active");
+        $(button).addClass("active");
+        var annotation_label = document.getElementById("labelbutton_"+button.name);
+
+        const collection = document.getElementsByClassName("active_Anno");
+        if (collection.length != 0) {
+            collection[0].classList.remove('active_Anno');
+        }
+        annotation_label.classList.add('active_Anno');
+    }
+}
+
+function showVal(value){
+    if(current_frame != value * $("#current_interval")[0].value){
+        clear_anno();
+        current_frame = value * $("#current_interval")[0].value;
+        frame_num.textContent = current_frame
+        video.currentTime = video.duration / total_frame_num * current_frame;
+        frame_name = "frame_" + current_frame;
+        if (frame_name in data){
+            for (let i = 0; i < data[frame_name].length; i++) {
+                data_label = data[frame_name][i];
+                create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
+        }
+    }
+    }
+}
+
+function clear_anno(){
+if (annotation_label_container.hasChildNodes()) {
+  annotation_label_container.innerHTML = '';
+  svg.innerHTML = '';
+}
+}
+
+function Delete_anno(){
+    order = $("#label_container .active")[0].name;
+    data[frame_name].splice(order-1, 1);
+    clear_anno();
+
+    for (let i = 0; i < data[frame_name].length; i++) {
+        data_label = data[frame_name][i];
+        create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
+    }
+}
+
+function submit_label(){
+    var token = "{{ csrf_token }}"
+    $.ajax({
+            url: '/Video/ajax_submitdata/',
+            type: "post",
+            headers: { 'X-CSRFTOKEN': `${token}` },
+            data: {
+                id: $(".col-2 .active")[0].id,
+                data: JSON.stringify(data)
+            },
+            dataType: "JSON",
+            success: function (res) {
+            }
+        })
+}
+
+function set_interval(){
+$("#total_frame_num")[0].textContent = total_frame_num + "/";
+x.max = Math.floor( total_frame_num / $("#current_interval")[0].value);
+}
+
+function create_label(x, y, width, height){
+    //Create label button
+    var label_button = document.createElement("button");
+    label_button.setAttribute('class',"list-group-item list-group-item-action normal_label_button");
+    label_button.setAttribute('onclick',"Highlight_Anno(this)");
+    annotation_label_container.appendChild(label_button);
+
+    //get the number of label button
+    var num = document.getElementsByClassName("normal_label_button").length;
+    label_button.setAttribute('name',num);
+    label_button.textContent = num;
+
+    //create rectagle
+    var rect = document.createElementNS(svgNS,'rect');
+    rect.setAttribute('x',x);
+    rect.setAttribute('y',y);
+    rect.setAttribute('width',width);
+    rect.setAttribute('height',height);
+    rect.setAttribute('class',"normal_Anno");
+    rect.setAttribute('onclick',"Highlight_Anno(this)");
+    rect.setAttribute('id', "labelbutton_" + num);
+    svg.appendChild(rect);
+
+    return num;
+}
+
+const getTransformParameters = (element) => {
+  const transform = element.style.transform;
+  let scale = 1,
+    x = 0,
+    y = 0;
+  if (transform.includes("scale"))
+    scale = parseFloat(transform.slice(transform.indexOf("scale") + 6));
+  if (transform.includes("translateX"))
+    x = parseInt(transform.slice(transform.indexOf("translateX") + 11));
+  if (transform.includes("translateY"))
+    y = parseInt(transform.slice(transform.indexOf("translateY") + 11));
+  return { scale, x, y };
+};
+
+const zoom = (direction) => {
+  const { scale, x, y } = getTransformParameters(video);
+  let dScale = 0.1;
+  if (direction == "out") dScale *= -1;
+  if (scale == 0.1 && direction == "out") dScale = 0;
+  svg.style.transform = getTransformString(scale + dScale, x, y);
+  video.style.transform = getTransformString(scale + dScale, x, y);
+};
+
+const getTransformString = (scale, x, y) =>
+  "scale(" + scale + ") " + "translateX(" + x + "%) translateY(" + y + "%)";
+
+function play(){
+if (video.paused) {
+       video.play();
+   } else {
+       video.pause();
+  }
+}
+
+video.ontimeupdate = function() {
+if (video.paused == false){
+    if (x.value != Math.floor(video.currentTime / video.duration * x.max)){
+        x.value = Math.floor(video.currentTime / video.duration * x.max)
+        clear_anno();
+        current_frame = x.value * $("#current_interval")[0].value;
+        frame_num.textContent = current_frame;
+        frame_name = "frame_" + current_frame;
+        if (frame_name in data){
+            for (let i = 0; i < data[frame_name].length; i++) {
+                data_label = data[frame_name][i];
+                create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
+            }
+        }
+
+    }
+
+}
+}
+
+function mute() {
+    if (video.muted){
+        video.muted = false;
+    }else{
+        video.muted = true;
+    }
+}
+
+function playrate() {
+    if (video.playbackRate == 1){
+        video.playbackRate = 2;
+    }else{
+        video.playbackRate = 1
+    }
+}
+
+</script>
+{% endblock %}
+
+

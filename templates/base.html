@@ -1,0 +1,160 @@
+{% load static %}
+
+<html lang="en">
+<head>
+
+    <link href="{% static 'css_bootstrap/bootstrap.min.css' %}" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <title>Label Studio Concise</title>
+
+    <style>
+    .my_padding {
+        padding: 15px;
+    }
+    {% block css_header %}
+    {% endblock %}
+    </style>
+
+
+</head>
+<body>
+<ul class="nav nav-pills my_padding">
+    {% block import_data %}
+
+    {% endblock %}
+    <li class="nav-item">
+        <button type="button" class="btn" id="btnAddProject">
+            Create Project
+        </button>
+    </li>
+    <li class="nav-item">
+         <button type="button" class="btn text-danger" id="btnDeleteProject">
+            Delete Project
+        </button>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Project List</a>
+        <ul class="dropdown-menu">
+            {% for object in project_object %}
+            <li><a class="dropdown-item" href="/{{object.get_labelType_display}}/{{object.id}}/">{{object.projecName}} - {{object.get_labelType_display}}</a></li>
+            {%endfor%}
+        </ul>
+    </li>
+    <li class="nav-item">
+         <button type="button" class="btn text-primary" id="btnExport">
+            Export Label
+        </button>
+    </li>
+</ul>
+
+{% block import_data_modal %}
+{% endblock %}
+
+<!-- Modal Create Project -->
+<div class="modal fade" id="staticBackdropProject" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropProjectLabel">Create Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="post" action="/">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {% for field in form1 %}
+                    <div class="container-fluid my_padding">{{ field.label }} : {{field}}</div>
+                    {%endfor%}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Structure -->
+<div class="row my_padding container-fluid">
+    <div class="col-2">
+        <div class="list-group border border-primary" style="overflow-y: scroll; height:600px;">
+            {% block data_button %}
+            {% endblock %}
+        </div>
+        <div class="container">
+            <button class="btn btn-danger border-3" onclick="Delete_data()">
+                Delete Data
+            </button>
+        </div>
+    </div>
+    <div class="col-7 border border-primary my_padding my_height">
+
+            {% block media_container %}
+            {% endblock %}
+    </div>
+    <div class="col-3 border border-primary my_height">
+        <div class="container-fluid my_padding">
+            <div id="label_container" class="list-group border border-primary" style="overflow-y: scroll; height:520px;">
+            </div>
+        </div>
+        <div class="container-fluid ZINDEX">
+            <button class="btn btn-success border-3" id="createAnno">
+                Create Anno
+            </button>
+            <button class="btn btn-Danger border-3" id="deleteAnno">
+                Delete Anno
+            </button>
+            <button class="btn btn-Primary border-3" id="submitData">
+                Submit
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- import bootstrap and jQuery -->
+<script src="{% static 'js_bootstrap/bootstrap.bundle.min.js' %}"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
+
+<script src="{% static 'jQuery/jquery.min.js' %}"></script>
+
+{% block javascript_content %}
+{% endblock %}
+
+<script type="text/javascript">
+
+$("#btnAddProject").click(function () {
+    $('#staticBackdropProject').modal('show');
+});
+
+$("#btnExport").click(function () {
+    $('#exportLabel').modal('show');
+});
+
+</script>
+
+<!-- Delete the data object if it is active (the button's id must be matched to the database' object's id)-->
+<script type="text/javascript">
+function Delete_data(){
+    if ($(".col-2 .active").length > 0){
+        $.ajax({
+                url: '/Video/ajax_delete_item',
+                type: "get",
+                data: {
+                    id: $(".col-2 .active")[0].id
+                },
+                dataType: "JSON",
+                success: function (res) {
+                    if(res.status == true){
+                        window.location.href = window.location.href;
+                    }
+                }
+            })
+    }
+}
+</script>
+</body>
+</html>
