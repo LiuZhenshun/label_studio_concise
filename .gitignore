@@ -2,3 +2,4 @@
 /export/
 /history_html/
 /db.sqlite3
+*pycache*
