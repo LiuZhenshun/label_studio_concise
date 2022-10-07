@@ -9,6 +9,6 @@ class MyMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         #response = self.get_response
         #response['Accept-Ranges'] = "bytes"
-        response.headers['Accept-Ranges'] = "bytes"
+        response['Accept-Ranges'] = "bytes"
         #print('Accept-Ranges' in response.headers)
         return response

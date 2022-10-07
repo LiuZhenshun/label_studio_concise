@@ -12,7 +12,7 @@ def show(path):
         for video_file in video_files:
             if (video_file.endswith(".png")):
                 image_path = os.path.join(folder_path, video_file)
-                label_path = os.path.join(folder_path, video_file.removesuffix(".png") + ".txt")
+                label_path = os.path.join(folder_path, video_file.replace(".png", ".txt"))
 
                 # Reading an image in default mode
                 image = cv2.imread(image_path)
@@ -25,7 +25,7 @@ def show(path):
                 for Line in Lines:
                     bbox_temp = np.zeros([4])
                     for i in range(4):
-                        string_num = "0" + Line[Line.find("."):Line.find(",")].removesuffix("]")
+                        string_num = "0" + Line[:-2][Line.find("."):Line.find(",")].replace(",", "")
                         bbox_temp[i] = float(string_num)
                         Line = Line.replace(Line[Line.find(".")-1:Line.find(",")+1],"")
                     bboxs.append(bbox_temp)
@@ -35,10 +35,11 @@ def show(path):
                     color = (255, 0, 0)
                     thickness = 2
                     image = cv2.rectangle(image, start_point, end_point, color, thickness)
-                window_name = video_file.removesuffix(".png") + ".txt"
+                window_name = video_file.replace(".png", ".txt")
                 # Displaying the image
                 cv2.imshow(window_name, image)
                 cv2.waitKey(0)
 
+
 if __name__ == '__main__':
-    show('/media/hkuit164/Backup/label_studio_consise/label_studio_consise/export/project_40')
+    show('project_1')

@@ -3,3 +3,6 @@
 /history_html/
 /db.sqlite3
 *pycache*
+
+.idea/
+.DS_Store
