@@ -25,4 +25,3 @@ def index(request):
     if form.is_valid():
         form.save()
         return render(request, 'base.html',context)
-

@@ -1,13 +1,48 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block import_data %}
+
+{% block css_header %}
+   .my_padding {
+    padding: 10px;
+    }
+    .my_height{
+    height: 600px
+    }
+    <!--.content{position: absolute; top: 200px; left: 200px; clip: rect(0px, 640px, 300px, 0px); width:900px; height:600px;}-->
+    .canvas{ position:relative; width:950px; height:550px; }
+    .imageContainer{ position:absolute; width:100%; height:100%; }
+    .svgContainer{ position:absolute; width:100%; height:100%; }
+
+    .normal_Anno{fill:blue;stroke:red;stroke-width:3;fill-opacity:0.1;stroke-opacity:0.9}
+    .active_Anno{fill-opacity:0.5;}
+
+    .active_KeyButton{fill}
+
+    .normal_label_button{}
+
+    .ZINDEX{position: relative; z-index: 3;}
+{% endblock %}
+
+
+{% block data_button %}
+{% for data_object in data_objects %}
+<button class="list-group-item list-group-item-action" onclick="Highlight_data_item(this)" id="{{data_object.id}}">{{data_object.filename}}</button>
+{%endfor%}
+{% endblock %}
+
+
+
+
+
+{% block import_data_modal %}
+<!-- Modal Import Data -->
 <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
      aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                <h5 class="modal-title" id="staticBackdropLabel">Import Data</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="post" enctype="multipart/form-data">
@@ -25,3 +60,522 @@
     </div>
 </div>
 {% endblock %}
+
+
+{% block import_data %}
+<li class="nav-item">
+    <button type="button" class="btn btn-primary" id="btnAddData">
+        Import Data
+    </button>
+</li>
+{% endblock %}
+
+
+{% block media_container %}
+<div class="container-fluid">
+    <div class="container-fluid">
+        <div id="myCanvas" class="border border-primary canvas">
+            <img id="imageContainer" class="imageContainer">
+            <svg id="svgContainer" class="border border-primary svgContainer">
+            </svg>
+        </div>
+    </div>
+
+    <div class="container-fluid ZINDEX">
+        <button class="btn btn-outline-success" type="submit" onclick="zoom('in')">ZOOM IN</button>
+        <button class="btn btn-outline-success" type="submit" onclick="zoom('out')">ZOOM OUT</button>
+    </div>
+
+    <div class="container-fluid ZINDEX">
+        <button class="btn btn-primary" type="submit" onclick="addKeypoint()">Add Keypoint</button>
+        <button class="btn btn-danger" type="submit" onclick="deleteKeypoint()">Delete Keypoint</button>
+    </div>
+
+</div>
+{% endblock %}
+
+
+{% block javascript_content %}
+<script type="text/javascript">
+// image document object
+let image = document.getElementById("imageContainer");
+var image_width, image_height, image_show_w, image_show_h;
+
+// document to add label button
+var annotation_label_container   = document.getElementById("label_container");
+
+// Document object to add children of rectanglar tag
+var svg   = document.getElementById("svgContainer");
+var svgNS = svg.namespaceURI;
+
+// Document object of canvas
+var canvas = document.getElementById("myCanvas");
+
+// Rect/keypoints used for modified
+var rectModify;
+var label_id;
+var keypointModify;
+var button_keypoint;
+
+//label data
+var data = {};
+var keypoint_color = {"0": 'red', "1": 'red', "2": 'red', "3": 'red', "4": 'red', "5": 'blue', "6": 'green', "7": 'blue', "8": 'green',
+                    "9": 'blue', "10": 'green', "11": 'yellow', "12": 'red', "13": 'yellow', "14": 'red', "15": 'yellow', "16": 'red'};
+var keypointName = {"0": 'Nose', "1": 'LeftEye', "2": 'RightEye', "3": 'LeftEar', "4": 'RightEar', "5": 'LShoulder', "6": 'RShoulder',
+                    "7": 'LElbow', "8": 'RElbow', "9": 'LWrist', "10": 'RWrist', "11": 'LHip', "12": 'RHip', "13": 'LKnee', "14": 'RKnee',
+                    "15": 'LAnkle', "16": 'RAnkle'};
+
+$("#btnAddData").click(function () {
+    $('#staticBackdrop').modal('show');
+});
+
+$(btnExport).click(function (){
+window.location.href = window.location.href + "export";
+})
+
+$(btnDeleteProject).click(function (){
+window.location.href = window.location.href + "delete";
+})
+
+$("#createAnno").attr('onClick', 'Create_anno();');
+$("#deleteAnno").attr('onClick', 'Delete_anno();');
+$("#submitData").attr('onClick', 'submit_label();');
+
+function Highlight_data_item(button) {
+
+   $(".col-2 .active").removeClass("active");
+   $(button).addClass("active");
+   image.src = "/media/" + button.textContent;
+
+   clear_anno();
+   $.ajax({
+            url: '/Image/ajax_getdata',
+            type: "get",
+            data: {
+                id: button.id
+            },
+            dataType: "JSON",
+            success: function (res) {
+                data = res.data;
+                image_width = res.image_info["width"];
+                image_height = res.image_info["height"];
+                image_show_w = 950;
+                //image_show_h = image_height/image_width*950;
+                image_show_h = 550;
+                //add = (550 - image_show_h)/2;
+                if ("boxes" in data) {
+                    for (let i = 0; i < data["boxes"].length; i++) {
+                        data_label = data["boxes"][i];
+                        //create_label(data_label[0]*image_show_w, data_label[1]*image_show_h + add , data_label[2]*image_show_w, data_label[3]*image_show_h);
+                        create_label(data_label[0]*image_show_w, data_label[1]*image_show_h, data_label[2]*image_show_w, data_label[3]*image_show_h);
+                    }
+                }
+                if ("keypoint" in data) {
+                    for (const [key, value] of Object.entries(data["keypoint"])) {
+                        for (let i = 0; i < value.length; i++) {
+                            if (value[i][2] == 1) {
+                                keypoint_id = key + "_" + i;
+                                draw_keypoint(value[i][0]*image_show_w, value[i][1]*image_show_h, keypoint_color[i], keypoint_id);
+                            }
+                        }
+                    }
+                }
+            }
+        })
+}
+
+
+function Create_anno(){
+    var  xStart, yStart, xEnd, yEnd, rect;
+
+    canvas.addEventListener("mousedown", mouseDown);
+    canvas.addEventListener("mouseup", mouseUp);
+}
+
+function mouseDown(e) {
+    xStart = e.offsetX;
+    yStart = e.offsetY;
+    label_oreder = create_label(xStart, yStart, 5, 5);
+    rect = document.getElementById("labelbutton_" + label_oreder);
+    canvas.addEventListener('mousemove', mouseMove);
+}
+
+function mouseMove(e){
+    xEnd = e.offsetX;
+    yEnd = e.offsetY;
+    reset_rect_shape(rect, xStart, yStart, xEnd-xStart, yEnd-yStart);
+}
+
+function mouseUp(e) {
+    xEnd = e.offsetX;
+    yEnd = e.offsetY;
+    if (xStart != xEnd && yStart != yEnd) {
+    if (("boxes" in data) == false){
+            data["boxes"] = [];
+        }
+    //data["boxes"]= data["boxes"].concat([[xStart/image_show_w, (yStart-add)/image_show_h, (xEnd-xStart)/image_show_w, (yEnd-yStart)/image_show_h],]);
+    data["boxes"]= data["boxes"].concat([[xStart/image_show_w, yStart/image_show_h, (xEnd-xStart)/image_show_w, (yEnd-yStart)/image_show_h],]);
+    }
+canvas.removeEventListener("mousemove", mouseMove);
+canvas.removeEventListener("mousedown", mouseDown);
+canvas.removeEventListener("mouseup", mouseUp);
+}
+
+function modifyAnno(e) {
+    var xStart = e.offsetX;
+    var yStart = e.offsetY;
+    if (xStart <= parseInt(rectModify.getAttribute("x")) + 10 && yStart <= parseInt(rectModify.getAttribute("y")) + 10){
+        canvas.addEventListener('mousemove', modifyMoveLU);
+        canvas.addEventListener("mouseup", modifyUpLU);
+    }else if (xStart >=  parseInt(rectModify.getAttribute("x")) + parseInt(rectModify.getAttribute("width")) - 10 && yStart >=  parseInt(rectModify.getAttribute("y")) + parseInt(rectModify.getAttribute("height")) - 10){
+        canvas.addEventListener('mousemove', modifyMoveRD);
+        canvas.addEventListener("mouseup", modifyUpRD);
+    }else{
+        if (("keypoint" in data) == false){
+            data["keypoint"] = {};
+        }
+        if ((label_id in data["keypoint"]) == false){
+            var x = new Array(17);
+            for (var i = 0; i < x.length; i++) {
+                x[i] = [0,0,0];
+            }
+            data["keypoint"][label_id] = x;
+        }
+        var index_point = 0;
+        //console.log(data["keypoint"][label_id]);
+        for (const [key,value] of Object.entries(data["keypoint"][label_id])){
+            //console.log(value);
+            if (value[2] == 0){
+                console.log('break');
+                break;
+            }else{
+                index_point = index_point + 1;
+            }
+        }
+        //console.log(index_point);
+        if (index_point < 17){
+            data["keypoint"][label_id][index_point] = [xStart/image_show_w, yStart/image_show_h, 1];
+            keypoint_id = label_id + "_" + index_point
+            draw_keypoint(xStart,yStart, keypoint_color[index_point], keypoint_id);
+        }
+    }
+}
+
+function modifyMoveLU(e) {
+    newxStart = e.offsetX;
+    newyStart = e.offsetY;
+
+    newxEnd = parseInt(rectModify.getAttribute("x")) + parseInt(rectModify.getAttribute("width"));
+    newyEnd = parseInt(rectModify.getAttribute("y")) + parseInt(rectModify.getAttribute("height"));
+
+    reset_rect_shape(rectModify,newxStart,newyStart,newxEnd-newxStart, newyEnd-newyStart);
+}
+
+function modifyUpLU(e) {
+    canvas.removeEventListener('mousemove', modifyMoveLU);
+    canvas.removeEventListener("mouseup", modifyUpLU);
+    if (newxStart != newxEnd && newyStart != newyEnd) {
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][0] = newxStart/image_show_w;
+        //data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][1] = (newyStart-add)/image_show_h;
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][1] = newyStart/image_show_h;
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][2] = (newxEnd-newxStart)/image_show_w;
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][3] = (newyEnd-newyStart)/image_show_h;
+    }
+}
+
+function modifyMoveRD(e) {
+    newxEnd = e.offsetX;
+    newyEnd = e.offsetY;
+
+    newxStart = parseInt(rectModify.getAttribute("x"));
+    newyStart = parseInt(rectModify.getAttribute("y"));
+
+    reset_rect_shape(rectModify,newxStart,newyStart,newxEnd-newxStart, newyEnd-newyStart);
+}
+
+function modifyUpRD(e) {
+    canvas.removeEventListener('mousemove', modifyMoveRD);
+    canvas.removeEventListener("mouseup", modifyUpRD);
+    if (newxStart != newxEnd && newyStart != newyEnd) {
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][0] = newxStart/image_show_w;
+        //data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][1] = (newyStart-add)/image_show_h;
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][1] = newyStart/image_show_h;
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][2] = (newxEnd-newxStart)/image_show_w;
+        data["boxes"][parseInt(rectModify.id.replace("labelbutton_",""))-1][3] = (newyEnd-newyStart)/image_show_h;
+    }
+}
+
+function reset_rect_shape(rect,x,y,w,h){
+    rect.setAttribute('x',x);
+    rect.setAttribute('y',y);
+    rect.setAttribute('width',w);
+    rect.setAttribute('height',h);
+}
+
+function Highlight_Anno(e) {
+    if (e.tagName == "rect"){
+        if (rectModify){
+            rectModify.removeEventListener("mousedown", modifyAnno);
+        }
+        rectModify = e;
+        label_id = parseInt(rectModify.id.replace("labelbutton_",""))-1;
+        const collection = document.getElementsByClassName("active_Anno");
+        if (collection.length != 0) {
+            collection[0].classList.remove('active_Anno');
+        }
+        rectModify.classList.add('active_Anno');
+        rectModify.addEventListener("mousedown", modifyAnno);
+        var button_label = document.getElementsByName(rectModify.id.replace("labelbutton_",""))
+        $(".col-3 .active").removeClass("active");
+        $(button_label).addClass("active");
+    } else {
+        var button = e
+        $(".col-3 .active").removeClass("active");
+        $(button).addClass("active");
+        var annotation_label = document.getElementById("labelbutton_"+button.name);
+
+        const collection = document.getElementsByClassName("active_Anno");
+        if (collection.length != 0) {
+            collection[0].classList.remove('active_Anno');
+        }
+        annotation_label.classList.add('active_Anno');
+    }
+}
+
+function createKeypointButton(button){
+    for (let i = 16; i>=0; i--) {
+        var keypoint_div = document.createElement("div");
+        var keypoint_button = document.createElement("button");
+        keypoint_div.setAttribute('class',"container");
+        keypoint_button.setAttribute('class',"list-group-item list-group-item-action");
+        keypoint_button.setAttribute('id', "keypoint_label_" + (button.name-1) + "_" + i);
+        keypoint_button.setAttribute('onclick', "HightLightKeypointButton(this)");
+        keypoint_button.textContent = keypointName[i]
+
+        if (data["keypoint"][button.name-1][i][2] == 0){
+            keypoint_button.style.color = 'red';
+        }
+
+        keypoint_div.appendChild(keypoint_button);
+        button.parentNode.insertBefore(keypoint_div, button.nextSibling);
+    }
+}
+
+function HightLightKeypointButton(button){
+    if ( button_keypoint != undefined){
+        button_keypoint.classList.remove('active');
+    }
+    button_keypoint = button;
+    button_keypoint.setAttribute('class',"list-group-item list-group-item-action active");
+    keypointModify = document.getElementById(button_keypoint.id.replace("keypoint_label_",""));
+    if (keypointModify){
+        Highlight_Keypoint(keypointModify);
+    }else{
+        canvas.addEventListener("mousedown", keypoint_add_mousedown);
+        canvas.addEventListener("mouseup", keypoint_add_mouseup);
+    }
+    function keypoint_add_mousedown(e){
+        xStart = e.offsetX;
+        yStart = e.offsetY;
+
+        keypoint_id = button_keypoint.id.replace("keypoint_label_","");
+        line_index = keypoint_id.indexOf("_");
+        box_id = keypoint_id.substring(0,line_index);
+        index_point = keypoint_id.substring(line_index + 1, keypoint_id.length);
+
+        data["keypoint"][box_id][index_point] = [xStart/image_show_w, yStart/image_show_h, 1];
+        draw_keypoint(xStart,yStart, keypoint_color[index_point], keypoint_id);
+    }
+
+    function keypoint_add_mouseup(e){
+        canvas.removeEventListener("mousedown", keypoint_add_mousedown);
+        canvas.removeEventListener("mouseup", keypoint_add_mouseup);
+        clear_anno();
+        showLabel();
+    }
+}
+
+function clear_anno(){
+    if (annotation_label_container.hasChildNodes()) {
+      annotation_label_container.innerHTML = '';
+      svg.innerHTML = '';
+    }
+}
+
+function Delete_anno(){
+    order = $("#label_container .active")[0].name;
+    data["boxes"].splice(order-1, 1);
+    if ("keypoint" in data){
+        if ((order-1) in data["keypoint"]){
+            delete data["keypoint"][order-1];
+            for (const [key, value] of Object.entries(data["keypoint"])) {
+                if (key > order-1){
+                    data["keypoint"][key-1] = value;
+                    //console.log(key);
+                    if (((key + 1) in data["keypoint"]) == false ){
+                        if (key != order-1) {
+                            delete data["keypoint"][key];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    clear_anno();
+    showLabel();
+}
+
+function showLabel(){
+    for (let i = 0; i < data["boxes"].length; i++) {
+            data_label = data["boxes"][i];
+            //create_label(data_label[0]*image_show_w, data_label[1]*image_show_h + add, data_label[2]*image_show_w, data_label[3]*image_show_h);
+            create_label(data_label[0]*image_show_w, data_label[1]*image_show_h, data_label[2]*image_show_w, data_label[3]*image_show_h);
+        }
+        for (const [key, value] of Object.entries(data["keypoint"])) {
+            for (let i = 0; i < value.length; i++) {
+                if (value[i][2] == 1) {
+                    keypoint_id = key + "_" + i;
+                    draw_keypoint(value[i][0]*image_show_w, value[i][1]*image_show_h, keypoint_color[i], keypoint_id);
+                }
+            }
+        }
+}
+
+function submit_label(){
+    var token = "{{ csrf_token }}"
+    $.ajax({
+            url: '/Image/ajax_submitdata/',
+            type: "post",
+            headers: { 'X-CSRFTOKEN': `${token}` },
+            data: {
+                id: $(".col-2 .active")[0].id,
+                data: JSON.stringify(data)
+            },
+            dataType: "JSON",
+            success: function (res) {
+            }
+        })
+}
+
+function draw_keypoint(x, y, color, id){
+    var circle = document.createElementNS(svgNS,'circle');
+    circle.setAttribute('cx', x);
+    circle.setAttribute('cy', y);
+    circle.setAttribute('r', '3');
+    circle.setAttribute('fill', color);
+    circle.setAttribute('id', id);
+    circle.addEventListener("mousedown", Highlight_Keypoint);
+
+    svg.appendChild(circle);
+}
+
+function Highlight_Keypoint(circle){
+    if (circle.target){
+        keypointModify = circle.target;
+    }else{
+        keypointModify = circle
+    }
+    keypointModify.setAttribute('r', '5');
+    keypointModify.removeEventListener("mousedown", Highlight_Keypoint);
+    keypointModify.addEventListener("mousedown", keypoint_mosudown);
+
+    button_keypoint = document.getElementById("keypoint_label_" + keypointModify.id);
+    button_keypoint.classList.add('active');
+}
+
+function keypoint_mosudown(event){
+    canvas.addEventListener("mousemove", keypoint_mousemove);
+
+    canvas.addEventListener("mouseup", keypoint_mouseup);
+    function keypoint_mousemove(event){
+        xEnd = event.offsetX;
+        yEnd = event.offsetY;
+        keypointModify.setAttribute('cx', xEnd);
+        keypointModify.setAttribute('cy', yEnd);
+    }
+    function keypoint_mouseup(event){
+        line_index = keypointModify.id.indexOf("_");
+        box_id = keypointModify.id.substring(0,line_index);
+        keypoint_id = keypointModify.id.substring(line_index + 1, keypointModify.id.length);
+        data["keypoint"][box_id][keypoint_id] = [keypointModify.getAttribute('cx')/image_show_w, keypointModify.getAttribute('cy')/image_show_h, 1];
+
+        canvas.removeEventListener("mousemove",keypoint_mousemove);
+        canvas.removeEventListener("mouseup", keypoint_mouseup);
+        keypointModify.removeEventListener("mousedown", keypoint_mosudown);
+        keypointModify.addEventListener("mousedown", Highlight_Keypoint);
+        keypointModify.setAttribute('r', '3');
+        button_keypoint.classList.remove('active');
+    }
+}
+
+function addKeypoint(){
+
+}
+
+function deleteKeypoint(){
+    if (keypointModify){
+        line_index = keypointModify.id.indexOf("_");
+        box_id = keypointModify.id.substring(0,line_index);
+        keypoint_id = keypointModify.id.substring(line_index + 1, keypointModify.id.length);
+        data["keypoint"][box_id][keypoint_id] = [0, 0, 0];
+    }
+    clear_anno();
+    showLabel();
+}
+
+function create_label(x, y, width, height){
+    //Create label button
+    var label_button = document.createElement("button");
+    label_button.setAttribute('class',"list-group-item list-group-item-action normal_label_button dropdown-toggle");
+    label_button.setAttribute('onclick',"Highlight_Anno(this)");
+    annotation_label_container.appendChild(label_button);
+
+
+    //get the number of label button
+    var num = document.getElementsByClassName("normal_label_button").length;
+    label_button.setAttribute('name', num);
+    label_button.textContent = num;
+    createKeypointButton(label_button);
+
+    //create rectagle
+    var rect = document.createElementNS(svgNS,'rect');
+    rect.setAttribute('x',x);
+    rect.setAttribute('y',y);
+    rect.setAttribute('width',width);
+    rect.setAttribute('height',height);
+    rect.setAttribute('class',"normal_Anno");
+    rect.setAttribute('onclick',"Highlight_Anno(this)");
+    rect.setAttribute('id', "labelbutton_" + num);
+    svg.appendChild(rect);
+
+    return num;
+}
+
+const getTransformParameters = (element) => {
+  const transform = element.style.transform;
+  let scale = 1, x = 0, y = 0;
+  if (transform.includes("scale"))
+    scale = parseFloat(transform.slice(transform.indexOf("scale") + 6));
+  if (transform.includes("translateX"))
+    x = parseInt(transform.slice(transform.indexOf("translateX") + 11));
+  if (transform.includes("translateY"))
+    y = parseInt(transform.slice(transform.indexOf("translateY") + 11));
+  return { scale, x, y };
+};
+
+const zoom = (direction) => {
+  const { scale, x, y } = getTransformParameters(image);
+  let dScale = 0.1;
+  if (direction == "out") dScale *= -1;
+  if (scale == 0.1 && direction == "out") dScale = 0;
+  svg.style.transform = getTransformString(scale + dScale, x, y);
+  image.style.transform = getTransformString(scale + dScale, x, y);
+};
+
+const getTransformString = (scale, x, y) =>
+  "scale(" + scale + ") " + "translateX(" + x + "%) translateY(" + y + "%)";
+
+</script>
+{% endblock %}
+
+

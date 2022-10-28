@@ -107,7 +107,7 @@
                 Delete Anno
             </button>
             <button class="btn btn-Primary border-3" id="submitData">
-                Submit
+                Save
             </button>
         </div>
     </div>
@@ -141,10 +141,10 @@ $("#btnExport").click(function () {
 function Delete_data(){
     if ($(".col-2 .active").length > 0){
         $.ajax({
-                url: '/Video/ajax_delete_item',
+                url: window.location.href + 'ajax_delete_item',
                 type: "get",
                 data: {
-                    id: $(".col-2 .active")[0].id
+                    data_id: $(".col-2 .active")[0].id
                 },
                 dataType: "JSON",
                 success: function (res) {

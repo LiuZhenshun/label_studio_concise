@@ -75,8 +75,8 @@ def ajax_submitdata(request):
     #Video.objects.filter(id = request.POST.get('id')).update(data = {} )
     return HttpResponse("SUCCESS")
 
-def ajax_delete_item(request):
-    object = Video.objects.filter(id = request.GET.get('id'))[0]
+def ajax_delete_item(request,pk):
+    object = Video.objects.filter(id = request.GET.get('data_id'))[0]
     os.remove(os.path.join(os.getcwd(),'media',str(object.filename)))
     object.delete()
     data_dict = {"status":True}

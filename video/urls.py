@@ -9,5 +9,5 @@ urlpatterns = [
     path('<int:pk>/export/', views.export_project, name = 'export_project'),
     path('ajax_getdata/', views.ajax_getdata,  name='get_data'),
     path('ajax_submitdata/',views.ajax_submitdata,  name='get_data'),
-    path('ajax_delete_item/', views.ajax_delete_item, name='delete_item'),
+    path('<int:pk>/ajax_delete_item', views.ajax_delete_item, name='delete_item'),
 ]
