@@ -10,4 +10,5 @@ urlpatterns = [
     path('ajax_submitdata/',views.ajax_submitdata,  name='submit_data'),
     path('download/', views.download, name='download'),
     path('<int:pk>/ajax_delete_item', views.ajax_delete_item, name='data_delete'),
+    path('<int:pk>/export', views.data_export, name='data_export'),
 ]
