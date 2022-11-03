@@ -190,36 +190,36 @@ function Create_anno(){
 
     canvas.addEventListener("mousedown", mouseDown);
     canvas.addEventListener("mouseup", mouseUp);
-}
-
-function mouseDown(e) {
-    xStart = e.offsetX;
-    yStart = e.offsetY;
-    label_oreder = create_label(xStart, yStart, 5, 5);
-    rect = document.getElementById("labelbutton_" + label_oreder);
-    canvas.addEventListener('mousemove', mouseMove);
-}
-
-function mouseMove(e){
-    xEnd = e.offsetX;
-    yEnd = e.offsetY;
-    reset_rect_shape(rect, xStart, yStart, xEnd-xStart, yEnd-yStart);
-}
-
-function mouseUp(e) {
-    xEnd = e.offsetX;
-    yEnd = e.offsetY;
-    if (xStart != xEnd && yStart != yEnd) {
-    if (("boxes" in data) == false){
-            data["boxes"] = [];
-        }
-    //data["boxes"]= data["boxes"].concat([[xStart/image_show_w, (yStart-add)/image_show_h, (xEnd-xStart)/image_show_w, (yEnd-yStart)/image_show_h],]);
-    data["boxes"]= data["boxes"].concat([[xStart/image_show_w, yStart/image_show_h, (xEnd-xStart)/image_show_w, (yEnd-yStart)/image_show_h],]);
+    function mouseDown(e) {
+        xStart = e.offsetX;
+        yStart = e.offsetY;
+        label_oreder = create_label(xStart, yStart, 5, 5);
+        rect = document.getElementById("labelbutton_" + label_oreder);
+        canvas.addEventListener('mousemove', mouseMove);
     }
-canvas.removeEventListener("mousemove", mouseMove);
-canvas.removeEventListener("mousedown", mouseDown);
-canvas.removeEventListener("mouseup", mouseUp);
+
+    function mouseMove(e){
+        xEnd = e.offsetX;
+        yEnd = e.offsetY;
+        reset_rect_shape(rect, xStart, yStart, xEnd-xStart, yEnd-yStart);
+    }
+
+    function mouseUp(e) {
+        xEnd = e.offsetX;
+        yEnd = e.offsetY;
+        if (xStart != xEnd && yStart != yEnd) {
+        if (("boxes" in data) == false){
+                data["boxes"] = [];
+            }
+        //data["boxes"]= data["boxes"].concat([[xStart/image_show_w, (yStart-add)/image_show_h, (xEnd-xStart)/image_show_w, (yEnd-yStart)/image_show_h],]);
+        data["boxes"]= data["boxes"].concat([[xStart/image_show_w, yStart/image_show_h, (xEnd-xStart)/image_show_w, (yEnd-yStart)/image_show_h],]);
+        }
+        canvas.removeEventListener("mousemove", mouseMove);
+        canvas.removeEventListener("mousedown", mouseDown);
+        canvas.removeEventListener("mouseup", mouseUp);
+    }
 }
+
 
 function modifyAnno(e) {
     var xStart = e.offsetX;
@@ -257,6 +257,8 @@ function modifyAnno(e) {
             data["keypoint"][label_id][index_point] = [xStart/image_show_w, yStart/image_show_h, 1];
             keypoint_id = label_id + "_" + index_point
             draw_keypoint(xStart,yStart, keypoint_color[index_point], keypoint_id);
+            clear_anno();
+            showLabel();
         }
     }
 }
@@ -343,6 +345,16 @@ function Highlight_Anno(e) {
 }
 
 function createKeypointButton(button){
+    if (("keypoint" in data) == false){
+            data["keypoint"] = {};
+        }
+        if (((button.name-1) in data["keypoint"]) == false){
+            var x = new Array(17);
+            for (var i = 0; i < x.length; i++) {
+                x[i] = [0,0,0];
+            }
+            data["keypoint"][(button.name-1)] = x;
+        }
     for (let i = 16; i>=0; i--) {
         var keypoint_div = document.createElement("div");
         var keypoint_button = document.createElement("button");
