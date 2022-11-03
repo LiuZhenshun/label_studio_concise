@@ -14,5 +14,5 @@ python manage.py migrate
 ```
 - Start the server at http://localhost:8080
 ```
-python label_studio/manage.py runserver
+python manage.py runserver
 ```
