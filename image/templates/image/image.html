@@ -163,6 +163,9 @@ function Highlight_data_item(button) {
                 //image_show_h = image_height/image_width*950;
                 image_show_h = 550;
                 //add = (550 - image_show_h)/2;
+                if (data == null){
+                    data = {};
+                }
                 if ("boxes" in data) {
                     for (let i = 0; i < data["boxes"].length; i++) {
                         data_label = data["boxes"][i];
