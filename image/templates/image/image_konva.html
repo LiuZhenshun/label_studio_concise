@@ -74,10 +74,12 @@
 {% block media_container %}
 <div class="container-fluid">
     <div class="container-fluid">
-        <div id="myCanvas" class="border border-primary canvas">
+        <div class="border border-primary canvas">
             <img id="imageContainer" class="imageContainer">
-            <svg id="svgContainer" class="border border-primary svgContainer">
-            </svg>
+            <div id="myCanvas"class="border border-primary svgContainer">
+                <svg id="svgContainer">
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -96,16 +98,17 @@
 
 
 {% block javascript_content %}
+<script src="{% static 'ShapeCreator/ShapeCreator.js' %}"></script>
 <script type="text/javascript">
 // image document object
 let image = document.getElementById("imageContainer");
 var image_width, image_height, image_show_w, image_show_h;
 
 // document to add label button
-var annotation_label_container   = document.getElementById("label_container");
+var annotation_label_container  = document.getElementById("label_container");
 
 // Document object to add children of rectanglar tag
-var svg   = document.getElementById("svgContainer");
+var svg = document.getElementById("svgContainer");
 var svgNS = svg.namespaceURI;
 
 // Document object of canvas
@@ -116,6 +119,21 @@ var rectModify;
 var label_id;
 var keypointModify;
 var button_keypoint;
+
+var kStage = new Konva.Stage({
+    width: 950,
+    height: 550,
+    container: canvas,
+});
+var kLayer = new Konva.Layer();
+kStage.add(kLayer);
+
+var VisObj = new VisualizatorKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container);
+var CreaAnnoObj = new CreaAnnoKeypointImage("Keypoint",  data, kStage, kLayer, VisObj);
+var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj);
+var SaveObj = new SaveDataKeypointImage("Keypoint", data, kStage);
+var kTransformer = ListenerObj.ReturnTransformer();
+var ShapeDeletorObj = new ShapeDeletorKeypointImage("Keypoint", data, kStage, kLayer, kTransformer, VisObj);
 
 //label data
 var data = {};
@@ -136,9 +154,9 @@ window.location.href = window.location.href + "export";
 $(btnDeleteProject).click(function (){
 window.location.href = window.location.href + "delete";
 })
+$("#createAnno").attr('onClick', 'CreaAnnoObj.StarCrea()');
 
-$("#createAnno").attr('onClick', 'Create_anno();');
-$("#deleteAnno").attr('onClick', 'Delete_anno();');
+$("#deleteAnno").attr('onClick', 'ShapeDeletorObj.DeleteShape();');
 $("#submitData").attr('onClick', 'submit_label();');
 
 function Highlight_data_item(button) {
@@ -156,35 +174,120 @@ function Highlight_data_item(button) {
             },
             dataType: "JSON",
             success: function (res) {
+                ListenerObj.StopStageListener();
                 data = res.data;
                 image_width = res.image_info["width"];
                 image_height = res.image_info["height"];
-                image_show_w = 950;
-                //image_show_h = image_height/image_width*950;
-                image_show_h = 550;
-                //add = (550 - image_show_h)/2;
+
                 if (data == null){
                     data = {};
                 }
-                if ("boxes" in data) {
-                    for (let i = 0; i < data["boxes"].length; i++) {
-                        data_label = data["boxes"][i];
-                        //create_label(data_label[0]*image_show_w, data_label[1]*image_show_h + add , data_label[2]*image_show_w, data_label[3]*image_show_h);
-                        create_label(data_label[0]*image_show_w, data_label[1]*image_show_h, data_label[2]*image_show_w, data_label[3]*image_show_h);
-                    }
-                }
-                if ("keypoint" in data) {
-                    for (const [key, value] of Object.entries(data["keypoint"])) {
-                        for (let i = 0; i < value.length; i++) {
-                            if (value[i][2] == 1) {
-                                keypoint_id = key + "_" + i;
-                                draw_keypoint(value[i][0]*image_show_w, value[i][1]*image_show_h, keypoint_color[i], keypoint_id);
-                            }
-                        }
-                    }
-                }
+                CreaAnnoObj.Data = data;
+                VisObj.Data = data;
+                VisObj.ShowData();
+                ListenerObj.Data = data;
+                ListenerObj.StartStageListener();
+
+                SaveObj.Data = data;
+
+                ShapeDeletorObj.Data = data;
             }
         })
+}
+
+class CreaAnnoOutdate{
+    constructor(AnnoTypeCSS, Canvas, Data) {
+        this.Canvas = Canvas;
+        this.AnnoTypeCSS = AnnoTypeCSS;
+        this.Data = Data;
+        // because addeventlistener's function could not call this (it would become a html element)
+        this.mouseDown = this.mouseDown.bind(this);
+        this.mouseUp = this.mouseUp.bind(this);
+        this.mouseMove = this.mouseMove.bind(this);
+      }
+
+    xStart;
+    yStart;
+    xEnd;
+    yEnd;
+    rect;
+
+    //Canvas's height and width
+    image_show_h = 550;
+    image_show_w = 950;
+
+    StarCrea(){
+        this.Canvas.addEventListener("mousedown", this.mouseDown, false);
+        this.Canvas.addEventListener("mouseup", this.mouseUp, false);
+        console.log("start create Anno");
+        console.log("Current Data",this.Data);
+      }
+
+    mouseDown(e) {
+        this.xStart = e.offsetX;
+        this.yStart = e.offsetY;
+        var rect = this.CreaRect(this.xStart, this.yStart, 5, 5);
+        this.rect = rect;
+        console.log(this.xStart, this.yStart);
+        this.Canvas.addEventListener('mousemove', this.mouseMove, false);
+    }
+
+    mouseMove(e){
+        this.xEnd = e.offsetX;
+        this.yEnd = e.offsetY;
+        if (this.xEnd-this.xStart > 0){
+            if (this.yEnd-this.yStart > 0){
+                this.ReseRectShape(this.rect, this.xStart, this.yStart, this.xEnd-this.xStart, this.yEnd-this.yStart);
+            }else{
+                this.ReseRectShape(this.rect, this.xStart, this.yEnd, this.xEnd-this.xStart, -(this.yEnd-this.yStart));
+            }
+        }else{
+            if (this.yEnd-this.yStart > 0){
+                this.ReseRectShape(this.rect, this.xEnd, this.yStart, -(this.xEnd-this.xStart), this.yEnd-this.yStart);
+            }else{
+                this.ReseRectShape(this.rect, this.xEnd, this.yEnd, -(this.xEnd-this.xStart), -(this.yEnd-this.yStart));
+            }
+        }
+    }
+
+    mouseUp(e) {
+        this.Canvas.removeEventListener("mousemove", this.mouseMove);
+        this.Canvas.removeEventListener("mousedown", this.mouseDown);
+        this.Canvas.removeEventListener("mouseup", this.mouseUp);
+        console.log(this);
+        if (this.xStart != this.xEnd && this.yStart != this.yEnd) {
+            //data_temp = this.data;
+            if (("boxes" in (this.Data)) == false){
+                    this.Data["boxes"] = [];
+                }
+            var xStart = this.rect.getAttribute('x');
+            var yStart = this.rect.getAttribute('y');
+            var width = this.rect.getAttribute('width');
+            var height = this.rect.getAttribute('height');
+            this.Data["boxes"]= this.Data["boxes"].concat([[xStart/this.image_show_w, yStart/this.image_show_h, width/this.image_show_w, height/this.image_show_h],]);
+        }
+        console.log("end of the create");
+    }
+
+    CreaRect(x, y, width, height){
+        //create rectagle
+        var rect = document.createElementNS(svgNS,'rect');
+        rect.setAttribute('x',x);
+        rect.setAttribute('y',y);
+        rect.setAttribute('width',width);
+        rect.setAttribute('height',height);
+        rect.setAttribute('class',this.AnnoTypeCSS);
+        svg.appendChild(rect);
+
+        return rect;
+    }
+
+    ReseRectShape(rect,x,y,w,h){
+        rect.setAttribute('x',x);
+        rect.setAttribute('y',y);
+        rect.setAttribute('width',w);
+        rect.setAttribute('height',h);
+    }
 }
 
 function Create_anno(){
@@ -456,6 +559,8 @@ function showLabel(){
 
 function submit_label(){
     var token = "{{ csrf_token }}"
+    //data = {};
+    SaveObj.SaveData();
     $.ajax({
             url: '/Image/ajax_submitdata/',
             type: "post",

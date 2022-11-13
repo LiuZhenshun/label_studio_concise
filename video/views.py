@@ -38,7 +38,7 @@ def project_list_data(request,pk):
            "project_object":project_object
         }
     if request.method == "GET":
-        return render(request, 'video/show_data_items.html', context)
+        return render(request, 'video/video_test.html', context)
 
     form = DataForm(data = request.POST, files= request.FILES)
 
@@ -59,9 +59,9 @@ def project_list_data(request,pk):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
             form.instance.filename
-            s.sendall((os.path.join(os.getcwd(),'media',str(form.instance.filename)) + "*" + str(form.instance.id) ).encode())
+            s.sendall((os.path.join(os.getcwd(),'media',str(form.instance.filename)) + "*" + "V" + str(form.instance.id) ).encode())
 
-        return render(request, 'video/show_data_items.html',context)
+        return render(request, 'video/video_test.html',context)
     print(form.errors)
 
 def ajax_getdata(request):

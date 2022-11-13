@@ -103,8 +103,10 @@
 </div>
 {% endblock %}
 
-
 {% block javascript_content %}
+<script src="{% static 'ShapeCreator/ShapeCreator.js' %}"></script>
+<!--<script src="https://unpkg.com/konva@8/konva.min.js"></script>-->
+
 <script type="text/javascript">
 // video document object
 let video = document.getElementById("videoContainer");
@@ -135,6 +137,10 @@ var data,  total_frame_num;
 var current_frame = 0;
 var frame_name = "frame_" + current_frame;
 
+//class object
+CreaAnnoObje = new CreaRectVideo("normal_Anno", canvas, data, current_frame);
+VisObj = new VisualizatorRectVideo("normal_Anno", canvas, data, current_frame, ButtCont = annotation_label_container);
+
 $("#btnAddData").click(function () {
     $('#staticBackdrop').modal('show');
 });
@@ -147,7 +153,7 @@ $(btnDeleteProject).click(function (){
 window.location.href = window.location.href + "delete";
 })
 
-$("#createAnno").attr('onClick', 'Create_anno();');
+$("#createAnno").attr('onClick', 'CreaAnnoObje.StarCrea()');
 $("#deleteAnno").attr('onClick', 'Delete_anno();');
 $("#submitData").attr('onClick', 'submit_label();');
 
@@ -171,19 +177,27 @@ function Highlight_data_item(button) {
                 data = res.data;
                 total_frame_num = res.video_info["frame_num"];
                 frame_name = "frame_0";
+                CreaAnnoObje.Data = data;
+                VisObj.Data = data;
 
-                video_width = res.video_info["width"];
-                video_height = res.video_info["height"];
+                VisObj.VideW = res.video_info["width"];
+                VisObj.VideH = res.video_info["height"];
+
+                /*
                 video_show_w = 950;
                 video_show_h = video_height/video_width*950;
                 add = (550 - video_show_h)/2;
+                */
 
+                VisObj.ShowData()
+                /*
                 if (frame_name in data){
                     for (let i = 0; i < data[frame_name].length; i++) {
                         data_label = data[frame_name][i];
                         create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
                     }
                 }
+                */
                 set_interval();
             }
         })

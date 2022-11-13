@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block css_header %}
+   .my_padding {
+    padding: 10px;
+    }
+    .my_height{
+    height: 600px
+    }
+    <!--.content{position: absolute; top: 200px; left: 200px; clip: rect(0px, 640px, 300px, 0px); width:900px; height:600px;}-->
+    .canvas{ position:relative; width:950px; height:550px; }
+    .videoContainer{ position:absolute; width:100%; height:100%; }
+    .svgContainer{ position:absolute; width:100%; height:100%; }
+
+    .normal_Anno{fill:blue;stroke:red;stroke-width:3;fill-opacity:0.1;stroke-opacity:0.9}
+    .active_Anno{fill-opacity:0.5;}
+
+    .normal_label_button{}
+
+    .ZINDEX{position: relative; z-index: 3;}
+{% endblock %}
+
+
+{% block data_button %}
+{% for data_object in data_objects %}
+<button class="list-group-item list-group-item-action" onclick="Highlight_data_item(this)" id="{{data_object.id}}">{{data_object.filename}}</button>
+{%endfor%}
+{% endblock %}
+
+
+
+
+
+{% block import_data_modal %}
+<!-- Modal Import Data -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Import Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="container-fluid my_padding">{{ field.label }} : {{field}}</div>
+                    {%endfor%}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block import_data %}
+<li class="nav-item">
+    <button type="button" class="btn btn-primary" id="btnAddData">
+        Import Data
+    </button>
+</li>
+{% endblock %}
+
+
+{% block media_container %}
+<div class="container-fluid">
+    <div class="container-fluid canvas">
+        <div class = "videoContainer">
+            <video id="videoContainer" class = "videoContainer"></video>
+        </div>
+        <div id="myCanvas" class="border border-primary svgContainer">
+
+        </div>
+    </div>
+    <div class="container-fluid ZINDEX">
+        <span id="total_frame_num"></span>
+        <label for="customRange1" class="form-label" id="show_frame">0</label>
+        <input type="range" class="form-range p-3 mb-2 bg-secondary text-white" id="customRange1" max="100"
+               oninput="showVal(this.value)">
+    </div>
+
+    <div class="container-fluid ZINDEX">
+        <button class="btn btn-outline-success" type="submit" onclick="zoom('in')">ZOOM IN</button>
+        <button class="btn btn-outline-success" type="submit" onclick="zoom('out')">ZOOM OUT</button>
+        <button class="btn btn-outline-success" type="submit" onclick="play()">Play/Pause</button>
+        <button class="btn btn-outline-success" type="submit" onclick="mute()">Mute/Unmute</button>
+        <button class="btn btn-outline-success" type="submit" onclick="playrate()">x2</button>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block javascript_content %}
+<script src="{% static 'ShapeCreator/ShapeCreator.js' %}"></script>
+<!--<script src="https://unpkg.com/konva@8/konva.min.js"></script>-->
+
+<script type="text/javascript">
+// video document object
+let video = document.getElementById("videoContainer");
+var video_width, video_height, video_show_w, video_show_h, add;
+
+// input-range document object
+var x = document.getElementById("customRange1");
+x.value = 0;
+
+var frame_num = document.getElementById("show_frame");
+frame_num.textContent = 0;
+
+// document to add label button
+var annotation_label_container   = document.getElementById("label_container");
+
+// Document object of canvas
+var canvas = document.getElementById("myCanvas");
+
+//label data
+var data,  total_frame_num;
+var current_frame = 0;
+var frame_name = "frame_" + current_frame;
+
+var kStage = new Konva.Stage({
+    width: 950,
+    height: 550,
+    container: canvas,
+});
+var kLayer = new Konva.Layer();
+kStage.add(kLayer);
+
+//class object
+VisObj = new VisualizatorRectVideo("normal_Anno", data, kStage, kLayer, current_frame, ButtCont = annotation_label_container);
+CreaAnnoObje = new CreaAnnoRectVideo("normal_Anno",  data, kStage, kLayer, current_frame, VisObj);
+ListenerObj = new ListenerRectVideo("Rect", data, kStage, kLayer, current_frame, annotation_label_container, VisObj);
+var kTransformer = ListenerObj.ReturnTransformer();
+
+ShapeDeletorObj = new ShapeDeletorRectVideo("Rect", data, kStage, kLayer, kTransformer, current_frame, annotation_label_container, VisObj);
+
+var ObjSet = [CreaAnnoObje, VisObj, ListenerObj, ShapeDeletorObj];
+
+$("#btnAddData").click(function () {
+    $('#staticBackdrop').modal('show');
+});
+
+$(btnExport).click(function (){
+window.location.href = window.location.href + "export";
+})
+
+$(btnDeleteProject).click(function (){
+window.location.href = window.location.href + "delete";
+})
+
+$("#createAnno").attr('onClick', 'CreateShape()');
+$("#deleteAnno").attr('onClick', 'ShapeDeletorObj.DeleteShape();');
+$("#submitData").attr('onClick', 'submit_label();');
+
+function Highlight_data_item(button) {
+   $(".col-2 .active").removeClass("active");
+   $(button).addClass("active");
+   video.src = "/media/" + button.textContent;
+
+   x.value = 0;
+   frame_num.textContent = 0;
+   $.ajax({
+            url: '/Video/ajax_getdata',
+            type: "get",
+            data: {
+                id: button.id
+            },
+            dataType: "JSON",
+            success: function (res) {
+                data = res.data;
+                total_frame_num = res.video_info["frame_num"];
+                InitObjParameter(ObjSet, 0, data, res.video_info["width"], res.video_info["height"], annotation_label_container);
+                VisObj.ShowData();
+                ListenerObj.StartStageListener();
+            }
+        });
+}
+
+function CreateShape(){
+    CreaAnnoObje.StarCrea();
+    VisObj.ShowData();
+}
+
+function InitObjParameter(Obj, CurrentFrame, Data, VideW, VideH, ButtonContainer){
+    Obj[0].Data = Data;
+    //Obj[0].CurrentFrame = CurrentFrame;
+
+    Obj[1].Data = Data;
+    Obj[1].VideW = VideW;
+    Obj[1].VideH = VideH;
+    Obj[1].ButtCont = ButtonContainer;
+    Obj[1].CurrentFrame =CurrentFrame;
+
+    Obj[2].Data = Data;
+    Obj[2].ButtCont = ButtonContainer;
+    Obj[2].CurrentFrame =CurrentFrame;
+
+    Obj[3].Data = Data;
+    Obj[3].ButtCont = ButtonContainer;
+    Obj[3].CurrentFrame =CurrentFrame;
+}
+
+function ResetObjParameter(Obj, CurrentFrame){
+    Obj[0].CurrentFrame = CurrentFrame;
+    Obj[1].CurrentFrame = CurrentFrame;
+    Obj[2].CurrentFrame = CurrentFrame;
+    Obj[3].CurrentFrame = CurrentFrame;
+}
+
+function showVal(value){
+    if(current_frame != value * 10){
+        current_frame = value * 10;
+        frame_num.textContent = current_frame;
+        video.currentTime = video.duration / total_frame_num * current_frame;
+        ListenerObj.StopStageListener();
+        ResetObjParameter(ObjSet, current_frame);
+        VisObj.ShowData();
+        ListenerObj.StartStageListener();
+    }
+}
+
+function submit_label(){
+    var token = "{{ csrf_token }}"
+    $.ajax({
+            url: '/Video/ajax_submitdata/',
+            type: "post",
+            headers: { 'X-CSRFTOKEN': `${token}` },
+            data: {
+                id: $(".col-2 .active")[0].id,
+                data: JSON.stringify(data)
+            },
+            dataType: "JSON",
+            success: function (res) {
+            }
+        })
+}
+
+const getTransformParameters = (element) => {
+  const transform = element.style.transform;
+  let scale = 1,
+    x = 0,
+    y = 0;
+  if (transform.includes("scale"))
+    scale = parseFloat(transform.slice(transform.indexOf("scale") + 6));
+  if (transform.includes("translateX"))
+    x = parseInt(transform.slice(transform.indexOf("translateX") + 11));
+  if (transform.includes("translateY"))
+    y = parseInt(transform.slice(transform.indexOf("translateY") + 11));
+  return { scale, x, y };
+};
+
+
+const getTransformString = (scale, x, y) =>
+  "scale(" + scale + ") " + "translateX(" + x + "%) translateY(" + y + "%)";
+
+function play(){
+if (video.paused) {
+       video.play();
+   } else {
+       video.pause();
+  }
+}
+
+video.ontimeupdate = function() {
+if (video.paused == false){
+    if (x.value != Math.floor(video.currentTime / video.duration * x.max)){
+        x.value = Math.floor(video.currentTime / video.duration * x.max)
+        clear_anno();
+        current_frame = x.value * $("#current_interval")[0].value;
+        frame_num.textContent = current_frame;
+        frame_name = "frame_" + current_frame;
+        if (frame_name in data){
+            for (let i = 0; i < data[frame_name].length; i++) {
+                data_label = data[frame_name][i];
+                create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
+            }
+        }
+
+    }
+
+}
+}
+
+function mute() {
+    if (video.muted){
+        video.muted = false;
+    }else{
+        video.muted = true;
+    }
+}
+
+function playrate() {
+    if (video.playbackRate == 1){
+        video.playbackRate = 2;
+    }else{
+        video.playbackRate = 1
+    }
+}
+
+socket = new WebSocket("ws://127.0.0.1:8000/ws");
+socket.onmessage = function (event){
+    console.log(event.data);
+}
+
+</script>
+{% endblock %}
+
+

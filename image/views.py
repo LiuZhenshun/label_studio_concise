@@ -42,7 +42,7 @@ def project_list_data(request,pk):
            "project_object":project_object
         }
     if request.method == "GET":
-        return render(request, 'image/image.html', context)
+        return render(request, 'image/image_konva.html', context)
 
     form = DataForm(data = request.POST, files= request.FILES)
 
@@ -64,7 +64,7 @@ def project_list_data(request,pk):
             dataForm.filename = file
             dataForm.save()
 
-        return render(request, 'image/image.html',context)
+        return render(request, 'image/image_konva.html',context)
     print(form.errors)
 
 def ajax_getdata(request):
