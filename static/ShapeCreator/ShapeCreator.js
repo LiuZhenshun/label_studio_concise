@@ -34,8 +34,8 @@ class CreaAnnoKeypointImage extends CreaAnno{
         this.rect = new Konva.Rect({
             x: 0,
             y: 0,
-            width: 5,
-            height: 5,
+            width: 20,
+            height: 20,
             fill: "rgba(14, 136, 233, 0.3)",
             name: 'rect',
             draggable: false,
@@ -106,7 +106,6 @@ class CreaAnnoKeypointImage extends CreaAnno{
 
         }
         this.rect.destroy();
-
         this.ShowClass.ShowData();
     }
 
@@ -242,6 +241,7 @@ class VisualizatorKeypointImage extends Visualizator{
         this.KeypointNameSet = {"0": 'Nose', "1": 'LeftEye', "2": 'RightEye', "3": 'LeftEar', "4": 'RightEar', "5": 'LShoulder', "6": 'RShoulder',
                     "7": 'LElbow', "8": 'RElbow', "9": 'LWrist', "10": 'RWrist', "11": 'LHip', "12": 'RHip', "13": 'LKnee', "14": 'RKnee',
                     "15": 'LAnkle', "16": 'RAnkle'};
+        this.SelectedButton;
     }
 
     ShowData(){
@@ -249,7 +249,6 @@ class VisualizatorKeypointImage extends Visualizator{
         var data = this.Data;
         var ImageShowW = this.Stage.width();
         var ImageShowH = this.Stage.height();
-
         if ("boxes" in data){
             for (let i = 0; i < data["boxes"].length; i++) {
                 this.CreaRect(data["boxes"][i][0]*ImageShowW, data["boxes"][i][1]*ImageShowH, data["boxes"][i][2]*ImageShowW, data["boxes"][i][3]*ImageShowH, i);
@@ -279,8 +278,8 @@ class VisualizatorKeypointImage extends Visualizator{
             if (this.Data["keypoint"][id]){
                 let value = this.Data["keypoint"][id];
                 for (let j = 0; j < value.length; j++) {
-                    if (value[j][2] == 1) {
-                        this.CreaKeypoint(group, value[j][0]*this.Stage.width(), value[j][1]*this.Stage.height(), 3, this.ColorSet[j], j)
+                    if (value[j][2] == 1 || value[j][2] == 2) {
+                        this.CreaKeypoint(group, value[j][0]*this.Stage.width(), value[j][1]*this.Stage.height(), 3, this.ColorSet[j], j);
                     }
                 }
             }
@@ -289,7 +288,7 @@ class VisualizatorKeypointImage extends Visualizator{
 
     //Create Keypoint
     CreaKeypoint(group, x, y, radius, color,id){
-        var circle = new Konva.Circle({
+        let circle = new Konva.Circle({
                 x: x,
                 y: y,
                 radius: radius,
@@ -314,6 +313,12 @@ class VisualizatorKeypointImage extends Visualizator{
             keypointButton.setAttribute('name', "keypoint"+i);
             if (this.Data["keypoint"][id][i][2] == 0){
                 keypointButton.style["color"] = 'red';
+            } else if(this.Data["keypoint"][id][i][2] == 2){
+                keypointButton.style["color"] = 'black';
+            } else if(this.Data["keypoint"][id][i][2] == 3){
+                keypointButton.style["color"] = 'rgb(236,140,7)'; // yellow
+            } else {
+                keypointButton.style["color"] = 'rgb(89,212,7)'; // green
             }
             Div.appendChild(keypointButton);
         }
@@ -415,6 +420,7 @@ class VisualizatorRectVideo extends Visualizator{
         label_button.setAttribute('class',"list-group-item list-group-item-action");
         label_button.textContent = "Rect" + (id+1);
         label_button.setAttribute('name', "rect"+id);
+
         this.ButtCont.appendChild(label_button);
     }
 
@@ -452,10 +458,12 @@ class Listener{
 }
 
 class ListenerKeypointImage extends Listener{
-    constructor(AnnoType, Data, Stage, Layer, ButtCont, ShowClass) {
+    constructor(AnnoType, Data, Stage, Layer, ButtCont, ShowClass, SkipButton, InvisibleButton) {
         super(AnnoType, Data, Stage, Layer);
         this.ButtCont = ButtCont;
         this.ShowClass = ShowClass;
+        this.SkipButton = SkipButton;
+        this.InvisibleButton = InvisibleButton;
         this.Transformer = new Konva.Transformer({
                                     rotateEnabled:false,
                                     centeredScaling: false,
@@ -486,6 +494,29 @@ class ListenerKeypointImage extends Listener{
         var ImageShowW = this.Stage.width();
         var ImageShowH = this.Stage.height();
 
+        this.SkipButtonListener();
+        this.InvisibleButtonListener();
+        //Add buttonListener
+        let Groups = this.Layer.getChildren(function(node){
+                    return node.getClassName() === 'Group';
+                  });
+        for (let i=0; i<Groups.length; i++){
+            let rectButton = document.getElementsByName("rect"+i)[0];
+            rectButton.addEventListener("click", (e) => {
+                if(this.ActiveButton === e.target){
+                    this.ActiveButton.setAttribute('class',"list-group-item list-group-item-action");
+                    this.ActiveButton = undefined;
+                    this.Transformer.nodes([]);
+                }
+                if (this.ActiveButton){
+                    this.ActiveButton.setAttribute('class',"list-group-item list-group-item-action");
+                }
+                this.ActiveButton = e.target;
+                e.target.setAttribute('class',"list-group-item list-group-item-action active");
+                let Rect = Groups[i].getChildren()[0];
+                this.Transformer.nodes([Rect]);
+            });
+        }
         // clicks should select/deselect shapes
         this.Stage.on('click tap', (e) => {
         // if click on empty area - remove all selections
@@ -495,11 +526,14 @@ class ListenerKeypointImage extends Listener{
                     this.SelectedRect.draggable(false);
                     this.SelectedRect = undefined;
                 }
+                if(this.ActiveButton){
+                    this.ActiveButton.setAttribute('class',"list-group-item list-group-item-action");
+                }
                 if (this.SelectedKeypoint){
                     this.SelectedKeypoint.radius(3);
                     this.SelectedKeypoint.draggable(false);
                     this.SelectedKeypoint = undefined;
-                    this.SelectedKeypointButton.style["color"] = "";
+                    this.SelectedKeypointButton.style["backgroundColor"] = "";
                     this.SelectedKeypointButton = undefined;
                 }
                 return;
@@ -518,7 +552,6 @@ class ListenerKeypointImage extends Listener{
                             break;
                         }
                     }
-
                     if (keypointId == undefined){
                         return;
                     }
@@ -530,7 +563,7 @@ class ListenerKeypointImage extends Listener{
                     this.Data["keypoint"][boxId][keypointId][2] = 1;
 
                     let keypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
-                    keypointButton.style["color"] = "";
+                    keypointButton.style["color"] = "rgb(89,212,7)";
                     return;
                 }
                 if(this.ActiveButton){
@@ -554,14 +587,14 @@ class ListenerKeypointImage extends Listener{
                     this.SelectedKeypoint.radius(3);
                     this.SelectedKeypoint.draggable(false);
                     this.SelectedKeypoint = undefined;
-                    this.SelectedKeypointButton.style["color"] = "";
+                    this.SelectedKeypointButton.style["backgroundColor"] = "";
                     this.SelectedKeypointButton = undefined;
                     return;
                 }
                 if (this.SelectedKeypoint){
                     this.SelectedKeypoint.radius(3);
                     this.SelectedKeypoint.draggable(false);
-                    this.SelectedKeypointButton.style["color"] = "";
+                    this.SelectedKeypointButton.style["backgroundColor"] = "";
                 }
                 this.SelectedKeypoint = e.target;
 
@@ -571,10 +604,57 @@ class ListenerKeypointImage extends Listener{
                 this.SelectedKeypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
                 e.target.radius(5);
                 e.target.draggable(true);
-                this.SelectedKeypointButton.style["color"] = "blue";
+                this.SelectedKeypointButton.style["backgroundColor"] = "rgb(34,133,226)";
                 return;
             }
         });
+    }
+
+    SkipButtonListener(){
+        this.SkipButton.addEventListener("click", (e) => {
+            if (this.Transformer.nodes().length){
+                let Rect = this.Transformer.nodes()[0];
+                let boxId = Rect.getAttr('name').replace("rect","");
+                let keypointData = this.Data["keypoint"][boxId];
+                let keypointId = this.GetKeypointIdBasedOnData(boxId, keypointData);
+                if (keypointId == undefined){
+                    return;
+                }
+                this.Data["keypoint"][boxId][keypointId][2] = 3;
+                let keypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
+                keypointButton.style["color"] = "rgb(236,140,7)";
+            }
+        });
+    }
+
+    InvisibleButtonListener(){
+        this.InvisibleButton.addEventListener("click", (e) => {
+            if (this.SelectedKeypoint){
+                let Group = this.SelectedKeypoint.getParent();
+                let boxId = Group.getAttr('name').replace("group","");
+                let keypointId = this.SelectedKeypoint.getAttr('name').replace("keypoint","");
+                let keypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
+
+                if (this.Data["keypoint"][boxId][keypointId][2] == 2){
+                    this.Data["keypoint"][boxId][keypointId][2] = 1;
+                    keypointButton.style["color"] = "rgb(89,212,7)";
+                }else{
+                    this.Data["keypoint"][boxId][keypointId][2] = 2;
+                    keypointButton.style["color"] = "black";
+                }
+            }
+        });
+    }
+
+    GetKeypointIdBasedOnData(boxId, keypointData){
+        let keypointId;
+        for (let i = 0; i < keypointData.length; i++) {
+            if (keypointData[i][2] == 0) {
+                keypointId = i;
+                break;
+            }
+        }
+        return keypointId;
     }
 
     StopStageListener(){
@@ -768,7 +848,6 @@ class ShapeDeletorRectVideo extends ShapeDeletor{
     }
 }
 
-
 class SaveData{
     constructor(AnnoType, Data) {
         this.AnnoTypeCSS = AnnoType;
@@ -803,9 +882,10 @@ class SaveDataKeypointImage extends ShapeDeletor{
                 return node.getClassName() === 'Circle';
             });
             for (let j = 0; j < Keypoints.length; j++){
-                this.Data["keypoint"][i][j][0] = (Keypoints[j].x()+Groups[i].x()) / this.Stage.width();
-                this.Data["keypoint"][i][j][1] = (Keypoints[j].y()+Groups[i].y()) / this.Stage.height();
-                this.Data["keypoint"][i][j][2] = 1;
+                let keypointId = Keypoints[j].getAttr("name").replace("keypoint","");
+                console.log(keypointId);
+                this.Data["keypoint"][i][keypointId][0] = (Keypoints[j].x()+Groups[i].x()) / this.Stage.width();
+                this.Data["keypoint"][i][keypointId][1] = (Keypoints[j].y()+Groups[i].y()) / this.Stage.height();
             }
         }
     }

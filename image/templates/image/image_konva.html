@@ -84,8 +84,8 @@
     </div>
 
     <div class="container-fluid ZINDEX">
-        <button class="btn btn-outline-success" type="submit" onclick="zoom('in')">ZOOM IN</button>
-        <button class="btn btn-outline-success" type="submit" onclick="zoom('out')">ZOOM OUT</button>
+        <button id="SkipButton" class="btn btn-outline-success" type="submit" onclick="">Skip</button>
+        <button id="InvisibleButton" class="btn btn-outline-success" type="submit" onclick="">Invisible</button>
     </div>
 
 </div>
@@ -103,8 +103,10 @@ var image_width, image_height, image_show_w, image_show_h;
 var annotation_label_container  = document.getElementById("label_container");
 
 
-// Document object of canvas
+// Document object
 var canvas = document.getElementById("myCanvas");
+var SkipButton = document.getElementById("SkipButton");
+var InvisibleButton = document.getElementById("InvisibleButton");
 
 var kStage = new Konva.Stage({
     width: 950,
@@ -116,7 +118,7 @@ kStage.add(kLayer);
 
 var VisObj = new VisualizatorKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container);
 var CreaAnnoObj = new CreaAnnoKeypointImage("Keypoint",  data, kStage, kLayer, VisObj);
-var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj);
+var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj, SkipButton, InvisibleButton);
 var SaveObj = new SaveDataKeypointImage("Keypoint", data, kStage);
 var kTransformer = ListenerObj.ReturnTransformer();
 var ShapeDeletorObj = new ShapeDeletorKeypointImage("Keypoint", data, kStage, kLayer, kTransformer, VisObj);
@@ -192,30 +194,6 @@ function submit_label(){
             }
         })
 }
-
-const getTransformParameters = (element) => {
-  const transform = element.style.transform;
-  let scale = 1, x = 0, y = 0;
-  if (transform.includes("scale"))
-    scale = parseFloat(transform.slice(transform.indexOf("scale") + 6));
-  if (transform.includes("translateX"))
-    x = parseInt(transform.slice(transform.indexOf("translateX") + 11));
-  if (transform.includes("translateY"))
-    y = parseInt(transform.slice(transform.indexOf("translateY") + 11));
-  return { scale, x, y };
-};
-
-const zoom = (direction) => {
-  const { scale, x, y } = getTransformParameters(image);
-  let dScale = 0.1;
-  if (direction == "out") dScale *= -1;
-  if (scale == 0.1 && direction == "out") dScale = 0;
-  svg.style.transform = getTransformString(scale + dScale, x, y);
-  image.style.transform = getTransformString(scale + dScale, x, y);
-};
-
-const getTransformString = (scale, x, y) =>
-  "scale(" + scale + ") " + "translateX(" + x + "%) translateY(" + y + "%)";
 
 </script>
 {% endblock %}
