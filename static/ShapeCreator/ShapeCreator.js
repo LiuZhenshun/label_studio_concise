@@ -308,13 +308,12 @@ class VisualizatorKeypointImage extends Visualizator{
         rectButton.textContent = "Rect" + (id+1);
         rectButton.setAttribute('name', "rect"+id);
         Div.appendChild(rectButton);
-
-        for (let i=0; i<16; i++){
+        for (let i=0; i<17; i++){
             let keypointButton = document.createElement("button");
             keypointButton.textContent = this.KeypointNameSet[i];
             keypointButton.setAttribute('name', "keypoint"+i);
             if (this.Data["keypoint"][id][i][2] == 0){
-                keypointButton.style.color = 'red';
+                keypointButton.style["color"] = 'red';
             }
             Div.appendChild(keypointButton);
         }
@@ -475,6 +474,7 @@ class ListenerKeypointImage extends Listener{
         this.SelectedRect;
         this.SelectedKeypoint;
         this.ActiveButton;
+        this.SelectedKeypointButton;
     }
 
     StartStageListener(){
@@ -499,6 +499,8 @@ class ListenerKeypointImage extends Listener{
                     this.SelectedKeypoint.radius(3);
                     this.SelectedKeypoint.draggable(false);
                     this.SelectedKeypoint = undefined;
+                    this.SelectedKeypointButton.style["color"] = "";
+                    this.SelectedKeypointButton = undefined;
                 }
                 return;
             }
@@ -528,7 +530,7 @@ class ListenerKeypointImage extends Listener{
                     this.Data["keypoint"][boxId][keypointId][2] = 1;
 
                     let keypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
-                    keypointButton.style.removeProperty("color");
+                    keypointButton.style["color"] = "";
                     return;
                 }
                 if(this.ActiveButton){
@@ -547,19 +549,29 @@ class ListenerKeypointImage extends Listener{
                 return;
             }
             if (e.target.getClassName() === 'Circle') {
+
                 if (this.SelectedKeypoint === e.target){
                     this.SelectedKeypoint.radius(3);
                     this.SelectedKeypoint.draggable(false);
                     this.SelectedKeypoint = undefined;
+                    this.SelectedKeypointButton.style["color"] = "";
+                    this.SelectedKeypointButton = undefined;
                     return;
                 }
                 if (this.SelectedKeypoint){
                     this.SelectedKeypoint.radius(3);
                     this.SelectedKeypoint.draggable(false);
+                    this.SelectedKeypointButton.style["color"] = "";
                 }
                 this.SelectedKeypoint = e.target;
+
+                let group = e.target.getParent();
+                let boxId = group.getAttr('name').replace("group","");
+                let keypointId = e.target.getAttr('name').replace("keypoint","");
+                this.SelectedKeypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
                 e.target.radius(5);
                 e.target.draggable(true);
+                this.SelectedKeypointButton.style["color"] = "blue";
                 return;
             }
         });
@@ -783,16 +795,16 @@ class SaveDataKeypointImage extends ShapeDeletor{
             })[0];
             let width = Rect.width() * Rect.scaleX() / this.Stage.width();
             let height = Rect.height() * Rect.scaleY() / this.Stage.height();
-            let xStart = Rect.x() / this.Stage.width();
-            let yStart = Rect.y() / this.Stage.height();
+            let xStart = (Rect.x()+Groups[i].x())/ this.Stage.width();
+            let yStart = (Rect.y()+Groups[i].y()) / this.Stage.height();
             this.Data["boxes"][i]= [xStart, yStart, width, height];
 
             Keypoints = Groups[i].getChildren(function(node){
                 return node.getClassName() === 'Circle';
             });
             for (let j = 0; j < Keypoints.length; j++){
-                this.Data["keypoint"][i][j][0] = Keypoints[j].x() / this.Stage.width();
-                this.Data["keypoint"][i][j][1] = Keypoints[j].y() / this.Stage.height();
+                this.Data["keypoint"][i][j][0] = (Keypoints[j].x()+Groups[i].x()) / this.Stage.width();
+                this.Data["keypoint"][i][j][1] = (Keypoints[j].y()+Groups[i].y()) / this.Stage.height();
                 this.Data["keypoint"][i][j][2] = 1;
             }
         }

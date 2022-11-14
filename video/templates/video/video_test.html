@@ -178,6 +178,7 @@ function Highlight_data_item(button) {
                 InitObjParameter(ObjSet, 0, data, res.video_info["width"], res.video_info["height"], annotation_label_container);
                 VisObj.ShowData();
                 ListenerObj.StartStageListener();
+                set_interval();
             }
         });
 }
@@ -308,7 +309,10 @@ socket.onmessage = function (event){
     console.log(event.data);
 }
 
+function set_interval(){
+    $("#total_frame_num")[0].textContent = total_frame_num + "/";
+    x.max = Math.floor( total_frame_num / 10);
+}
+
 </script>
 {% endblock %}
-
-
