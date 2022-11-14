@@ -402,7 +402,7 @@ class VisualizatorRectVideo extends Visualizator{
             y: y,
             width: width,
             height: height,
-            fill: "rgba(255, 0, 0, 0.3)",
+            fill: "rgba(14, 136, 233, 0.3)",
             name: "rect"+id,
             draggable: false,
             opacity: 1,
