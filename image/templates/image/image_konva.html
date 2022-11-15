@@ -24,16 +24,11 @@
     .ZINDEX{position: relative; z-index: 3;}
 {% endblock %}
 
-
 {% block data_button %}
 {% for data_object in data_objects %}
 <button class="list-group-item list-group-item-action" onclick="Highlight_data_item(this)" id="{{data_object.id}}">{{data_object.filename}}</button>
 {%endfor%}
 {% endblock %}
-
-
-
-
 
 {% block import_data_modal %}
 <!-- Modal Import Data -->
@@ -84,16 +79,15 @@
     </div>
 
     <div class="container-fluid ZINDEX">
-        <button id="SkipButton" class="btn btn-outline-success" type="submit" onclick="">Skip</button>
-        <button id="InvisibleButton" class="btn btn-outline-success" type="submit" onclick="">Invisible</button>
+        <button id="SkipButton" class="btn btn-outline-success" type="submit">Skip</button>
+        <button id="InvisibleButton" class="btn btn-outline-success" type="submit">Invisible</button>
     </div>
 
 </div>
 {% endblock %}
 
-
 {% block javascript_content %}
-<script src="{% static 'ShapeCreator/ShapeCreator.js' %}"></script>
+<script src="{% static 'ShapeCreator/ShapeCreator_MerageButton.js' %}"></script>
 <script type="text/javascript">
 // image document object
 let image = document.getElementById("imageContainer");
@@ -117,8 +111,8 @@ var kLayer = new Konva.Layer();
 kStage.add(kLayer);
 
 var VisObj = new VisualizatorKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container);
-var CreaAnnoObj = new CreaAnnoKeypointImage("Keypoint",  data, kStage, kLayer, VisObj);
 var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj, SkipButton, InvisibleButton);
+var CreaAnnoObj = new CreaAnnoKeypointImage("Keypoint",  data, kStage, kLayer, VisObj, ListenerObj);
 var SaveObj = new SaveDataKeypointImage("Keypoint", data, kStage);
 var kTransformer = ListenerObj.ReturnTransformer();
 var ShapeDeletorObj = new ShapeDeletorKeypointImage("Keypoint", data, kStage, kLayer, kTransformer, VisObj);
@@ -139,8 +133,8 @@ window.location.href = window.location.href + "delete";
 })
 $("#createAnno").attr('onClick', 'CreaAnnoObj.StarCrea()');
 
-$("#deleteAnno").attr('onClick', 'ShapeDeletorObj.DeleteShape();');
-$("#submitData").attr('onClick', 'submit_label();');
+$("#deleteAnno").attr('onClick', 'ShapeDeletorObj.DeleteShape()');
+$("#submitData").attr('onClick', 'submit_label()');
 
 function Highlight_data_item(button) {
    if(data){
