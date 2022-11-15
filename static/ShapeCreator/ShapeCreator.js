@@ -483,6 +483,8 @@ class ListenerKeypointImage extends Listener{
         this.SelectedKeypoint;
         this.ActiveButton;
         this.SelectedKeypointButton;
+        this.SkipButtonListener();
+        this.InvisibleButtonListener();
     }
 
     StartStageListener(){
@@ -494,8 +496,6 @@ class ListenerKeypointImage extends Listener{
         var ImageShowW = this.Stage.width();
         var ImageShowH = this.Stage.height();
 
-        this.SkipButtonListener();
-        this.InvisibleButtonListener();
         //Add buttonListener
         let Groups = this.Layer.getChildren(function(node){
                     return node.getClassName() === 'Group';
@@ -623,6 +623,7 @@ class ListenerKeypointImage extends Listener{
                 this.Data["keypoint"][boxId][keypointId][2] = 3;
                 let keypointButton = document.getElementsByName("keypoint"+keypointId)[boxId];
                 keypointButton.style["color"] = "rgb(236,140,7)";
+                console.log(this.Data);
             }
         });
     }
@@ -883,7 +884,6 @@ class SaveDataKeypointImage extends ShapeDeletor{
             });
             for (let j = 0; j < Keypoints.length; j++){
                 let keypointId = Keypoints[j].getAttr("name").replace("keypoint","");
-                console.log(keypointId);
                 this.Data["keypoint"][i][keypointId][0] = (Keypoints[j].x()+Groups[i].x()) / this.Stage.width();
                 this.Data["keypoint"][i][keypointId][1] = (Keypoints[j].y()+Groups[i].y()) / this.Stage.height();
             }
