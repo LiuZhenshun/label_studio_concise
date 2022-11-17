@@ -103,7 +103,6 @@ class CreaAnnoKeypointImage extends CreaAnno{
             }
 
             this.Data["keypoint"][this.Data["boxes"].length-1] = x;
-
         }
         this.rect.destroy();
         this.ShowClass.ShowData();
@@ -273,6 +272,7 @@ class VisualizatorKeypointImage extends Visualizator{
                 draggable: false,
                 opacity: 1,
             });
+        let rectButton = document.createElement("button");
         this.Layer.add(group.add(rect));
         if ("keypoint" in this.Data) {
             if (this.Data["keypoint"][id]){
@@ -507,6 +507,7 @@ class ListenerKeypointImage extends Listener{
                     this.ActiveButton.setAttribute('class',"list-group-item list-group-item-action");
                     this.ActiveButton = undefined;
                     this.Transformer.nodes([]);
+                    return;
                 }
                 if (this.ActiveButton){
                     this.ActiveButton.setAttribute('class',"list-group-item list-group-item-action");
@@ -608,6 +609,10 @@ class ListenerKeypointImage extends Listener{
                 return;
             }
         });
+    }
+
+    LabelButtonListener(){
+
     }
 
     SkipButtonListener(){

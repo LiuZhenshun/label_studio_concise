@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.http import FileResponse
 
 import json, os, shutil
+from lib.JsonCreator import JsonCreator
 import socket
 
 
@@ -96,27 +97,40 @@ def delete_project(request,pk):
 
 def data_export(request,pk):
     imageOjects = Image.objects.filter(project_id = pk)
+    JsonObj = JsonCreator("coco", imageOjects)
+    JsonData = JsonObj.OutputJson()
+    JsonObject = json.dumps(JsonData, indent=4)
     path = os.path.join(os.getcwd(),'export')
     project_path = os.path.join(path, "project_{}".format(pk))
-    os.makedirs(project_path, exist_ok=True)
-    data = []
-    for imageOject in imageOjects:
-        imageName = str(imageOject.filename)
-        absolute_path = os.path.join(os.getcwd(), 'media', imageName)
-
-        output_json = {}
-        output_json["file_path"] = absolute_path
-        output_json["data"] = imageOject.data
-        output_json["info"] = imageOject.image_info
-
-        data.append(output_json)
-        # Serializing json
-    json_object = json.dumps(data, indent=4)
 
     # Writing to sample.json
     with open(os.path.join(project_path,"result_project_{}.json".format(pk)), "w") as outfile:
-        outfile.write(json_object)
-    return HttpResponseRedirect('/Video/{}'.format(pk))
+        outfile.write(JsonObject)
+
+    return HttpResponseRedirect('/Image/{}'.format(pk))
+# def data_export(request,pk):
+#     imageOjects = Image.objects.filter(project_id = pk)
+#     path = os.path.join(os.getcwd(),'export')
+#     project_path = os.path.join(path, "project_{}".format(pk))
+#     os.makedirs(project_path, exist_ok=True)
+#     data = []
+#     for imageOject in imageOjects:
+#         imageName = str(imageOject.filename)
+#         absolute_path = os.path.join(os.getcwd(), 'media', imageName)
+#
+#         output_json = {}
+#         output_json["file_path"] = absolute_path
+#         output_json["data"] = imageOject.data
+#         output_json["info"] = imageOject.image_info
+#
+#         data.append(output_json)
+#         # Serializing json
+#     json_object = json.dumps(data, indent=4)
+#
+#     # Writing to sample.json
+#     with open(os.path.join(project_path,"result_project_{}.json".format(pk)), "w") as outfile:
+#         outfile.write(json_object)
+#     return HttpResponseRedirect('/Image/{}'.format(pk))
 
 def download(request):
     file_path = '/media/hkuit164/Backup/assets/demo/people/00150.jpg'
