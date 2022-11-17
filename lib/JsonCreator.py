@@ -34,6 +34,8 @@ class JsonCreator:
             for (index, Oject) in enumerate(self.DatabaseOjects):
                 width = Oject.image_info["width"]
                 height = Oject.image_info["height"]
+                if 'boxes' not in Oject.data["boxes"] and 'keypoint' not in Oject.data["boxes"]:
+                    continue
                 for (box, Keypoints) in zip(Oject.data["boxes"], Oject.data["keypoint"]):
                     annotation = {}
                     annotation["bbox"] = [box[0]*width, box[1]*height, box[2]*width, box[3]*height]
