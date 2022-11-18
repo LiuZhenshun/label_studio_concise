@@ -46,6 +46,11 @@
             Export Label
         </button>
     </li>
+    <li class="nav-item">
+         <button type="button" class="btn text-primary" id="btnImportJson">
+            Import Json
+        </button>
+    </li>
 </ul>
 
 {% block import_data_modal %}
@@ -133,7 +138,6 @@ $("#btnAddProject").click(function () {
 $("#btnExport").click(function () {
     $('#exportLabel').modal('show');
 });
-
 </script>
 
 <!-- Delete the data object if it is active (the button's id must be matched to the database' object's id)-->
