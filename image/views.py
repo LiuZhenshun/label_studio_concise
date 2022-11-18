@@ -16,6 +16,54 @@ from project.models import Project
 import cv2
 import tempfile
 
+class CocoApi:
+    def __init__(self, JsonInMemery):
+        self.JsonInMemery = JsonInMemery
+
+    def GetImages(self, ImageId):
+        return self.JsonInMemery["images"][ImageId]
+
+    def GetAnnotation(self, ImageId):
+        Annotations = []
+        flag = 0
+        for Ann in self.JsonInMemery["annotations"]:
+            if Ann["image_id"] == ImageId:
+                Annotations.append(Ann)
+                flag = 1
+            if flag and (Ann["image_id"] != ImageId):
+                break
+        return Annotations
+
+    def ImageNumber(self,):
+        return len(self.JsonInMemery["images"])
+
+    def Coco2DatabaseFormat(self, Image, Annotations):
+        data = {}
+        image_info = {}
+        boxes = []
+        keypoints = {}
+        width = Image["width"]
+        height = Image["height"]
+        for index, Annotation in enumerate(Annotations):
+            boxes.append([Annotation["bbox"][0]/width, Annotation["bbox"][1]/height, Annotation["bbox"][2]/width, Annotation["bbox"][3]/height])
+            keypoints[index] = self.KeypointCoco2Database(Annotation["keypoints"], width, height)
+        data["boxes"] = boxes
+        data["keypoint"] = keypoints
+        image_info["height"] = height
+        image_info["width"] = width
+        return data, image_info
+
+    def KeypointCoco2Database(self, CocoKeypoint, width, height):
+        DatabaseKeypoints = []
+        for index in range(17):
+            if CocoKeypoint[index*3+2] == 0:
+                DatabaseKeypoint = [CocoKeypoint[index*3]/width, CocoKeypoint[index*3+1]/height, 3]
+            if CocoKeypoint[index*3+2] == 2:
+                DatabaseKeypoint = [CocoKeypoint[index*3]/width, CocoKeypoint[index*3+1]/height, 1]
+            if CocoKeypoint[index*3+2] == 1:
+                DatabaseKeypoint = [CocoKeypoint[index*3]/width, CocoKeypoint[index*3+1]/height, 2]
+            DatabaseKeypoints.append(DatabaseKeypoint)
+        return DatabaseKeypoints
 
 class DataForm(ModelForm):
     class Meta:
@@ -56,8 +104,8 @@ def project_list_data(request,pk):
                     temp.write(chunk)
                 Picture = cv2.imread(temp.name)
             ImageInfo = {}
-            ImageInfo["height"] = int(Picture.shape[1])
-            ImageInfo["width"] = int(Picture.shape[0])
+            ImageInfo["height"] = int(Picture.shape[0])
+            ImageInfo["width"] = int(Picture.shape[1])
 
 
             dataForm.image_info = ImageInfo
@@ -131,6 +179,22 @@ def data_export(request,pk):
 #     with open(os.path.join(project_path,"result_project_{}.json".format(pk)), "w") as outfile:
 #         outfile.write(json_object)
 #     return HttpResponseRedirect('/Image/{}'.format(pk))
+
+def UploadJson(request,pk):
+    file = request.FILES["Json"]
+    with tempfile.NamedTemporaryFile() as temp:
+        for chunk in file.chunks():
+            temp.write(chunk)
+        JsonObj =  open(temp.name, "r")
+        Json = json.load(JsonObj)
+        coco = CocoApi(Json)
+        for ImageIndex in range(coco.ImageNumber()):
+            Annotations = coco.GetAnnotation(ImageId=ImageIndex)
+            CocoImage = coco.GetImages(ImageIndex)
+            data, image_info = coco.Coco2DatabaseFormat(Image=CocoImage, Annotations=Annotations)
+            filename = os.path.join("project_{}".format(pk),CocoImage["file_name"])
+            Image.objects.filter(filename = filename, project_id = pk).update(data = data, image_info = image_info)
+    return HttpResponseRedirect('/Image/{}'.format(pk))
 
 def download(request):
     file_path = '/media/hkuit164/Backup/assets/demo/people/00150.jpg'
