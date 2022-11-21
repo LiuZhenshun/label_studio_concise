@@ -151,6 +151,7 @@ def data_export(request,pk):
     path = os.path.join(os.getcwd(),'export')
     project_path = os.path.join(path, "project_{}".format(pk))
 
+    os.makedirs(project_path, exist_ok=True)
     # Writing to sample.json
     with open(os.path.join(project_path,"result_project_{}.json".format(pk)), "w") as outfile:
         outfile.write(JsonObject)
