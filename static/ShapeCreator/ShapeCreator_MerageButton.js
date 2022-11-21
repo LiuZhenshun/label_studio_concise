@@ -472,12 +472,13 @@ class Listener{
 }
 
 class ListenerKeypointImage extends Listener{
-    constructor(AnnoType, Data, Stage, Layer, ButtCont, ShowClass, SkipButton, InvisibleButton) {
+    constructor(AnnoType, Data, Stage, Layer, ButtCont, ShowClass, SkipButton, InvisibleButton, DeleteKeypointButton) {
         super(AnnoType, Data, Stage, Layer);
         this.ButtCont = ButtCont;
         this.ShowClass = ShowClass;
         this.SkipButton = SkipButton;
         this.InvisibleButton = InvisibleButton;
+        this.DeleteKeypointButton = DeleteKeypointButton;
         this.Transformer = new Konva.Transformer({
                                     rotateEnabled:false,
                                     centeredScaling: false,
@@ -499,6 +500,7 @@ class ListenerKeypointImage extends Listener{
         this.SelectedKeypointButton;
         this.SkipButtonListener();
         this.InvisibleButtonListener();
+        this.DeleteKeypointButtonListenser();
     }
 
     StartStageListener(){
@@ -665,6 +667,24 @@ class ListenerKeypointImage extends Listener{
                     this.Data["keypoint"][boxId][keypointId][2] = 2;
                     keypointButton.style["color"] = "black";
                 }
+            }
+        });
+    }
+
+    DeleteKeypointButtonListenser(){
+        this.DeleteKeypointButton.addEventListener("click", (e) => {
+            console.log("1");
+            if (this.SelectedKeypoint){
+                let Group = this.SelectedKeypoint.getParent();
+                let boxId = Group.getAttr('name').replace("group","");
+                let keypointId = this.SelectedKeypoint.getAttr('name').replace("keypoint","");
+
+                this.Data["keypoint"][boxId][keypointId][2] = 3;
+                this.SelectedKeypointButton.style["color"] = "rgb(236,140,7)";
+                this.SelectedKeypoint.visible(false);
+                this.SelectedKeypointButton.style["backgroundColor"] = ""
+                this.SelectedKeypointButton = undefined;
+                this.SelectedKeypoint = undefined;
             }
         });
     }

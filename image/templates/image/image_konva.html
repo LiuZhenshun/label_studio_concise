@@ -104,6 +104,7 @@
     <div class="container-fluid ZINDEX">
         <button id="SkipButton" class="btn btn-outline-success" type="submit">Skip</button>
         <button id="InvisibleButton" class="btn btn-outline-success" type="submit">Invisible</button>
+        <button id="DeleteKeypointButton" class="btn btn-outline-danger">DeleteKeypoint</button>
     </div>
 
 </div>
@@ -125,6 +126,7 @@ var annotation_label_container  = document.getElementById("label_container");
 var canvas = document.getElementById("myCanvas");
 var SkipButton = document.getElementById("SkipButton");
 var InvisibleButton = document.getElementById("InvisibleButton");
+var DeleteKeypointButton = document.getElementById("DeleteKeypointButton");
 
 var kStage = new Konva.Stage({
     width: 950,
@@ -135,7 +137,7 @@ var kLayer = new Konva.Layer();
 kStage.add(kLayer);
 
 var VisObj = new VisualizatorKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container);
-var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj, SkipButton, InvisibleButton);
+var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj, SkipButton, InvisibleButton, DeleteKeypointButton);
 var CreaAnnoObj = new CreaAnnoKeypointImage("Keypoint",  data, kStage, kLayer, VisObj, ListenerObj);
 var SaveObj = new SaveDataKeypointImage("Keypoint", data, kStage);
 var kTransformer = ListenerObj.ReturnTransformer();
