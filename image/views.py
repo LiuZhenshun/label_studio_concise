@@ -197,6 +197,9 @@ def UploadJson(request,pk):
             Image.objects.filter(filename = filename, project_id = pk).update(data = data, image_info = image_info)
     return HttpResponseRedirect('/Image/{}'.format(pk))
 
+def ModelTraining(request,pk):
+    return render(request, 'image/Training.html')
+
 def download(request):
     file_path = '/media/hkuit164/Backup/assets/demo/people/00150.jpg'
     if os.path.exists(file_path):

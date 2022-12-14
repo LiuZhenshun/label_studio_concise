@@ -93,13 +93,12 @@ def face_detection_image(path):
                         (?,?,?,?,?,?,?,?,?,?,?)",(max_id_num ,serialised,0,'2022-08-18 02:00:40.147998','2022-08-23 07:01:27.825691',id_task,'{}',44.806,0,1,0))
             conn.commit()
 
-def video_processing(path):
-    video_id = path[path.find("*")+1:]
-    video_path = path[:path.find("*")]
+def video_processing(path,video_id):
+
 
     mp_face_detection = mp.solutions.face_detection
 
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(path)
 
     # Check if camera opened successfully
     if (cap.isOpened()== False):
