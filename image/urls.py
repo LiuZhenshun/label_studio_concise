@@ -13,4 +13,5 @@ urlpatterns = [
     path('<int:pk>/export', views.data_export, name='data_export'),
     path('<int:pk>/UploadJson', views.UploadJson, name='UploadJson'),
     path('<int:pk>/Training', views.ModelTraining, name = 'ModelTraining'),
+    path('<int:pk>/Checking', views.Checking, name = 'Checking'),
 ]

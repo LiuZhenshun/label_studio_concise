@@ -42,7 +42,7 @@
             </div>
             <form method="post" enctype="multipart/form-data">
                 <div class="modal-body">
-                    {% csrf_token %}
+                    git
                     {% for field in form %}
                     <div class="container-fluid my_padding">{{ field.label }} : {{field}}</div>
                     {%endfor%}
@@ -105,7 +105,11 @@
         <button id="SkipButton" class="btn btn-outline-success" type="submit">Skip</button>
         <button id="InvisibleButton" class="btn btn-outline-success" type="submit">Invisible</button>
         <button id="DeleteKeypointButton" class="btn btn-outline-danger">DeleteKeypoint</button>
-        <button id="CheckingButton" class="btn btn-outline-danger">Checking</button>
+    </div>
+    <div class="container-fluid">
+        <div class="border border-primary">
+            <img id="imageContainerChecking" style="position:absolute; width:400px; height:280px;">
+        </div>
     </div>
 
 </div>
@@ -117,6 +121,7 @@
 
 // image document object
 let image = document.getElementById("imageContainer");
+let image2 = document.getElementById("imageContainerChecking");
 var image_width, image_height, image_show_w, image_show_h;
 
 // document to add label button
@@ -155,12 +160,8 @@ $(btnExport).click(function (){
 window.location.href = window.location.href + "export";
 })
 
-$(btnExport).click(function (){
-window.location.href = window.location.href + "export";
-})
-
-$(CheckingButton).click(function (){
-window.location.href = window.location.href + "Checking";
+$(btnDeleteProject).click(function (){
+window.location.href = window.location.href + "delete";
 })
 
 $("#btnImportJson").click(function () {
@@ -180,6 +181,10 @@ function Highlight_data_item(button) {
    $(".col-2 .active").removeClass("active");
    $(button).addClass("active");
    image.src = "/media/" + button.textContent;
+   image2.src = "/media/" +
+   button.textContent.substr(0, button.textContent.lastIndexOf('/')) +
+   "/rgb/" +
+   button.textContent.substr(button.textContent.lastIndexOf('/')+1, button.textContent.length - 1).replace('thermal', 'rgb');
    $.ajax({
             url: '/Image/ajax_getdata',
             type: "get",

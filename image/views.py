@@ -200,6 +200,43 @@ def UploadJson(request,pk):
 def ModelTraining(request,pk):
     return render(request, 'image/Training.html')
 
+def Checking(request,pk):
+    project_object = Project.objects.all()
+    form1 = ProjectForm()
+    form = DataForm()
+    data_objects = Image.objects.filter(project_id = pk)
+    context = {
+           "form1":form1,
+           "form":form,
+           "data_objects":data_objects,
+           "project_object":project_object
+        }
+    if request.method == "GET":
+        return render(request, 'image/image_konva_checking.html', context)
+
+    form = DataForm(data = request.POST, files= request.FILES)
+
+    if form.is_valid():
+        for file in request.FILES.getlist('filename'):
+            dataForm = Image()
+            # write the inmemorydata in to cv2
+            with tempfile.NamedTemporaryFile() as temp:
+                for chunk in file.chunks():
+                    temp.write(chunk)
+                Picture = cv2.imread(temp.name)
+            ImageInfo = {}
+            ImageInfo["height"] = int(Picture.shape[0])
+            ImageInfo["width"] = int(Picture.shape[1])
+
+
+            dataForm.image_info = ImageInfo
+            dataForm.project = Project.objects.filter(id = pk)[0]
+            dataForm.filename = file
+            dataForm.save()
+
+        return render(request, 'image/image_konva_checking.html',context)
+    print(form.errors)
+
 def download(request):
     file_path = '/media/hkuit164/Backup/assets/demo/people/00150.jpg'
     if os.path.exists(file_path):
