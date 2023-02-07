@@ -99,14 +99,20 @@ def project_list_data(request,pk):
         for file in request.FILES.getlist('filename'):
             dataForm = Image()
             # write the inmemorydata in to cv2
-            with tempfile.NamedTemporaryFile() as temp:
-                for chunk in file.chunks():
-                    temp.write(chunk)
-                Picture = cv2.imread(temp.name)
+            # with tempfile.NamedTemporaryFile(delete=False) as temp:
+            #     for chunk in file.chunks():
+            #         temp.write(chunk)
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            for chunk in file.chunks():
+                temp.write(chunk)
+            Picture = cv2.imread(temp.name)
+
             ImageInfo = {}
             ImageInfo["height"] = int(Picture.shape[0])
             ImageInfo["width"] = int(Picture.shape[1])
-
+                #os.remove(temp.name)
+            temp.close()
+            os.unlink(temp.name)
 
             dataForm.image_info = ImageInfo
             dataForm.project = Project.objects.filter(id = pk)[0]
