@@ -11,9 +11,9 @@ import os
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter,URLRouter
-from label_studio_consise import routing
+from label_studio_concise import routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'label_studio_consise.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'label_studio_concise.settings')
 
 #application = get_asgi_application()
 application = ProtocolTypeRouter({
