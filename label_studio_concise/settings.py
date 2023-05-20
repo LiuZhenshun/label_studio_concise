@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'channels',
+    'websocket_app',
     'image.apps.ImageConfig',
     'video.apps.VideoConfig',
     'project.apps.ProjectConfig',
@@ -74,7 +75,16 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'label_studio_concise.wsgi.application'
+#WSGI_APPLICATION = 'label_studio_concise.wsgi.application'
+# Use channels layer for Django asynchronous features
+#ASGI_APPLICATION = 'label_studio_concise.asgi.application'
+
+# Channels
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
