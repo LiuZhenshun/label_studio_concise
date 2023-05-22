@@ -9,6 +9,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'label_studio_concise.settings')
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": URLRouter([
-        path('ws', consumers.MyConsumer.as_asgi()),
+        path('ws', consumers.TrainingConsumer.as_asgi()),
     ]),
 })

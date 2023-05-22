@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'channels',
     'websocket_app',
     'image.apps.ImageConfig',
@@ -77,7 +78,7 @@ TEMPLATES = [
 
 #WSGI_APPLICATION = 'label_studio_concise.wsgi.application'
 # Use channels layer for Django asynchronous features
-#ASGI_APPLICATION = 'label_studio_concise.asgi.application'
+ASGI_APPLICATION = 'label_studio_concise.asgi.application'
 
 # Channels
 CHANNEL_LAYERS = {

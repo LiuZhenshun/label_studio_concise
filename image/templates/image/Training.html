@@ -59,7 +59,7 @@
                 </div>
                 <div class="d-grid gap-2" style="height:30px"></div>
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-dark">
+                    <button type="button" class="btn btn-dark" onclick="startTraining()">
                         Start Training
                     </button>
                 </div>
@@ -76,11 +76,38 @@
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
 <script>
-socket = new WebSocket("ws://127.0.0.1:8000/ws");
-socket.onmessage = function (event){
-    console.log(event.data);
-    document.getElementById("span").append(event.data);
-    document.getElementById("span").appendChild(document.createElement("br"));
-}
+
+    function updateSpan(message) {
+        const span = document.getElementById('span');
+        const newMessage = document.createElement('div');
+        newMessage.innerHTML = message;
+        span.appendChild(newMessage);
+    }
+
+    function startTraining(){
+        socket.send(JSON.stringify({
+            'message': 'start_training',
+            'trainingInfor':{'OpM':0, 'LR':0.01},
+        }));
+    }
+
+    var socket = new WebSocket("ws://" + window.location.host + "/ws");
+
+    // Connection is open
+    socket.onopen = (event) => {
+        // Send a message to start training
+        console.log("Websocket connect to", "ws://" + window.location.host + "/ws");
+    };
+
+    // Listen for messages
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateSpan(data.message);
+    };
+
+    // Connection is closed
+    socket.onclose = (event) => {
+        console.error('Training socket closed');
+    };
 </script>
 </body>
