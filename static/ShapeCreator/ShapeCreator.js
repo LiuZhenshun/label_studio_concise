@@ -372,7 +372,10 @@ class VisualizatorRectVideo extends Visualizator{
         var VideoShowW = this.VideoShowW;
         var VideoShowH = this.VideoShowH;
         var add = this.Add;
-
+        
+        if (data == null){
+            data == {};
+        }
         if (FrameName in data){
             if(add[0]){
                 for (let i = 0; i < data[FrameName].length; i++) {
