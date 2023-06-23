@@ -74,10 +74,98 @@ class DataForm(ModelForm):
         }
         #fields = '__all__'
 
+
 class ProjectForm(ModelForm):
     class Meta:
         model = Project
         fields = '__all__'
+
+def polygonLabeling(request,pk):
+    project_object = Project.objects.all()
+    form1 = ProjectForm()
+    form = DataForm()
+    data_objects = Image.objects.filter(project_id = pk)
+    context = {
+           "form1":form1,
+           "form":form,
+           "data_objects":data_objects,
+           "project_object":project_object
+        }
+    if request.method == "GET":
+        return render(request, 'image/polygon_labeling.html', context)
+
+    form = DataForm(data = request.POST, files= request.FILES)
+
+    if form.is_valid():
+        for file in request.FILES.getlist('filename'):
+            dataForm = Image()
+            # write the inmemorydata in to cv2
+            # with tempfile.NamedTemporaryFile(delete=False) as temp:
+            #     for chunk in file.chunks():
+            #         temp.write(chunk)
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            for chunk in file.chunks():
+                temp.write(chunk)
+            Picture = cv2.imread(temp.name)
+
+            ImageInfo = {}
+            ImageInfo["height"] = int(Picture.shape[0])
+            ImageInfo["width"] = int(Picture.shape[1])
+                #os.remove(temp.name)
+            temp.close()
+            os.unlink(temp.name)
+
+            dataForm.image_info = ImageInfo
+            dataForm.project = Project.objects.filter(id = pk)[0]
+            dataForm.filename = file
+            dataForm.save()
+
+        return render(request, 'image/polygon_labeling.html',context)
+    print(form.errors)
+
+def rectLabeling(request,pk):
+    project_object = Project.objects.all()
+    form1 = ProjectForm()
+    form = DataForm()
+    data_objects = Image.objects.filter(project_id = pk)
+    context = {
+           "form1":form1,
+           "form":form,
+           "data_objects":data_objects,
+           "project_object":project_object
+        }
+    if request.method == "GET":
+        return render(request, 'image/rect_labeling.html', context)
+
+    form = DataForm(data = request.POST, files= request.FILES)
+
+    if form.is_valid():
+        for file in request.FILES.getlist('filename'):
+            dataForm = Image()
+            # write the inmemorydata in to cv2
+            # with tempfile.NamedTemporaryFile(delete=False) as temp:
+            #     for chunk in file.chunks():
+            #         temp.write(chunk)
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            for chunk in file.chunks():
+                temp.write(chunk)
+            Picture = cv2.imread(temp.name)
+
+            ImageInfo = {}
+            ImageInfo["height"] = int(Picture.shape[0])
+            ImageInfo["width"] = int(Picture.shape[1])
+                #os.remove(temp.name)
+            temp.close()
+            os.unlink(temp.name)
+
+            dataForm.image_info = ImageInfo
+            dataForm.project = Project.objects.filter(id = pk)[0]
+            dataForm.filename = file
+            dataForm.save()
+
+        return render(request, 'image/rect_labeling.html',context)
+    print(form.errors)
+
 
 def project_list_data(request,pk):
     project_object = Project.objects.all()

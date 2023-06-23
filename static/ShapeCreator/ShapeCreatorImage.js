@@ -12,6 +12,99 @@ class CreaAnno{
     }
 }
 
+class CreaAnnoRectImage extends CreaAnno{
+    constructor(AnnoType, Data, Stage, Layer) {
+        super(AnnoType, Data, Stage, Layer);
+
+        this.MouseDown = this.mouseDown.bind(this);
+        this.MouseUp = this.mouseUp.bind(this);
+        this.MouseMove = this.mouseMove.bind(this);
+
+        this.xStart;
+        this.yStart;
+        this.xEnd;
+        this.yEnd;
+        this.rect;
+
+        this.IfMouseDown = false;
+    }
+
+    StarCrea(){
+        this.rect = new Konva.Rect({
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 20,
+            fill: "rgba(14, 136, 233, 0.3)",
+            name: 'rect',
+            draggable: false,
+            opacity: 1,
+        });
+        this.Stage.on('mousedown create', this.MouseDown);
+        this.Stage.on('mousemove create', this.MouseMove);
+        this.Stage.on('mouseup create', this.MouseUp);
+    }
+
+    mouseDown(e){
+        this.IfMouseDown = true;
+        this.xStart = this.Stage.getPointerPosition().x;
+        this.yStart = this.Stage.getPointerPosition().y;
+        this.rect.x(this.xStart);
+        this.rect.y(this.yStart);
+        this.Layer.add(this.rect);
+    }
+
+    mouseMove(e){
+        if (this.IfMouseDown){
+            this.xEnd = this.Stage.getPointerPosition().x;
+            this.yEnd = this.Stage.getPointerPosition().y;
+            if (this.xEnd - this.xStart > 0){
+                if (this.yEnd-this.yStart > 0){
+                    this.ReseRectShape(this.rect, this.xStart, this.yStart, this.xEnd-this.xStart, this.yEnd- this.yStart);
+                }else{
+                    this.ReseRectShape(this.rect, this.xStart, this.yEnd, this.xEnd-this.xStart, -(this.yEnd- this.yStart));
+                }
+            }else{
+                if (this.yEnd-this.yStart > 0){
+                    this.ReseRectShape(this.rect, this.xEnd, this.yStart, -(this.xEnd-this.xStart), this.yEnd- this.yStart);
+                }else{
+                    this.ReseRectShape(this.rect, this.xEnd, this.yEnd, -(this.xEnd-this.xStart), -(this.yEnd- this.yStart));
+                }
+            }
+        }
+    }
+
+    mouseUp(e){
+        this.IfMouseDown = false;
+        this.Stage.off('mousedown create');
+        this.Stage.off('mousemove create');
+        this.Stage.off('mouseup create');
+
+        if (this.xStart != this.xEnd && this.yStart != this.yEnd) {
+            if (("boxes" in this.Data) == false){
+                this.Data["boxes"] = [];
+            }
+
+            var xStart = this.rect.x();
+            var yStart = this.rect.y();
+            var width = this.rect.width();
+            var height = this.rect.height();
+            var ImageShowW = this.Stage.width();
+            var ImageShowH = this.Stage.height();
+            this.Data["boxes"]= this.Data["boxes"].concat([[xStart/ImageShowW, yStart/ImageShowH, width/ImageShowW, height/ImageShowH],]);
+
+        }
+        this.rect.destroy();
+    }
+
+    ReseRectShape(rect,x,y,w,h){
+        rect.x(x);
+        rect.y(y);
+        rect.width(w);
+        rect.height(h);
+    }
+}
+
 class CreaAnnoKeypointImage extends CreaAnno{
     constructor(AnnoType, Data, Stage, Layer, ShowClass, ListenerClass) {
         super(AnnoType, Data, Stage, Layer);
@@ -117,109 +210,6 @@ class CreaAnnoKeypointImage extends CreaAnno{
         rect.height(h);
     }
 }
-
-class CreaAnnoRectVideo extends CreaAnno{
-    constructor(AnnoType, Data, Stage, Layer, CurrentFrame=0, ShowClass) {
-        super(AnnoType, Data, Stage, Layer);
-        this.ShowClass = ShowClass;
-
-        this.CurrentFrame = CurrentFrame;
-
-        this.MouseDown = this.mouseDown.bind(this);
-        this.MouseUp = this.mouseUp.bind(this);
-        this.MouseMove = this.mouseMove.bind(this);
-
-        this.xStart;
-        this.yStart;
-        this.xEnd;
-        this.yEnd;
-        this.rect;
-
-        this.IfMouseDown = false;
-      }
-
-    StarCrea(){
-        this.rect = new Konva.Rect({
-            x: 0,
-            y: 0,
-            width: 5,
-            height: 5,
-            fill: "rgba(255, 0, 0, 0.3)",
-            name: 'rect',
-            draggable: false,
-            opacity: 1,
-        });
-        this.Stage.on('mousedown create', this.MouseDown);
-        this.Stage.on('mousemove create', this.MouseMove);
-        this.Stage.on('mouseup create', this.MouseUp);
-    }
-
-    mouseDown(e){
-        this.IfMouseDown = true;
-        this.xStart = this.Stage.getPointerPosition().x;
-        this.yStart = this.Stage.getPointerPosition().y;
-        this.rect.x(this.xStart);
-        this.rect.y(this.yStart);
-        this.Layer.add(this.rect);
-    }
-
-    mouseMove(e){
-        if (this.IfMouseDown){
-            this.xEnd = this.Stage.getPointerPosition().x;
-            this.yEnd = this.Stage.getPointerPosition().y;
-            if (this.xEnd - this.xStart > 0){
-                if (this.yEnd-this.yStart > 0){
-                    this.ReseRectShape(this.rect, this.xStart, this.yStart, this.xEnd-this.xStart, this.yEnd- this.yStart);
-                }else{
-                    this.ReseRectShape(this.rect, this.xStart, this.yEnd, this.xEnd-this.xStart, -(this.yEnd- this.yStart));
-                }
-            }else{
-                if (this.yEnd-this.yStart > 0){
-                    this.ReseRectShape(this.rect, this.xEnd, this.yStart, -(this.xEnd-this.xStart), this.yEnd- this.yStart);
-                }else{
-                    this.ReseRectShape(this.rect, this.xEnd, this.yEnd, -(this.xEnd-this.xStart), -(this.yEnd- this.yStart));
-                }
-            }
-        }
-    }
-
-    mouseUp(e){
-        this.IfMouseDown = false;
-        this.Stage.off('mousedown create');
-        this.Stage.off('mousemove create');
-        this.Stage.off('mouseup create');
-
-        if (this.xStart != this.xEnd && this.yStart != this.yEnd) {
-            var FrameName = "frame_" + this.CurrentFrame;
-            if ((FrameName in (this.Data)) == false){
-                    this.Data[FrameName] = [];
-                }
-            var xStart = this.rect.x();
-            var yStart = this.rect.y();
-            var width = this.rect.width();
-            var height = this.rect.height();
-            //var {VideoShowW,VideoShowH, add} = this.ShowClass.GetVideoShowPar(this.ShowClass.VideW, this.ShowClass.VideH);
-            var VideoShowW = this.ShowClass.VideoShowW;
-            var VideoShowH = this.ShowClass.VideoShowH;
-            var add = this.ShowClass.Add;
-            if(add[0]){
-                this.Data[FrameName]= this.Data[FrameName].concat([[xStart/VideoShowW, (yStart-add[0])/VideoShowH, width/VideoShowW, height/VideoShowH],]);
-            }else{
-                this.Data[FrameName]= this.Data[FrameName].concat([[(xStart-add[1])/VideoShowW, yStart/VideoShowH, width/VideoShowW, height/VideoShowH],]);
-            }
-        }
-        this.rect.destroy();
-        this.ShowClass.ShowData();
-    }
-
-    ReseRectShape(rect,x,y,w,h){
-        rect.x(x);
-        rect.y(y);
-        rect.width(w);
-        rect.height(h);
-    }
-}
-
 
 // Base class used for visualize the data variable
 class Visualizator{
@@ -355,105 +345,6 @@ class VisualizatorKeypointImage extends Visualizator{
             return node.getClassName() === 'Transformer';
           });
           if (Transformer.length){
-            Transformer[0].nodes([]);
-          }
-        }
-    }
-}
-
-//Subclass used for visualize Rect in Video
-class VisualizatorRectVideo extends Visualizator{
-    constructor(AnnoType, Data, Stage, Layer, CurrentFrame = 0, VideW = 0, VideH = 0, ButtCont) {
-        super(AnnoType, Data, Stage, Layer);
-        this.CurrentFrame = CurrentFrame;
-        this.VideW = VideW;
-        this.VideH = VideH;
-        this.ButtCont = ButtCont;
-
-        this.VideoShowW;
-        this.VideoShowH;
-        this.Add;
-    }
-
-    ShowData(){
-        this.ClearAnno();
-
-        var FrameName = "frame_" + this.CurrentFrame;
-        if (FrameName==="frame_0"){
-            this.GetVideoShowPar(this.VideW, this.VideH)
-        }
-        var data = this.Data;
-        var VideoShowW = this.VideoShowW;
-        var VideoShowH = this.VideoShowH;
-        var add = this.Add;
-
-        if (FrameName in data){
-            if(add[0]){
-                for (let i = 0; i < data[FrameName].length; i++) {
-                        this.CreaRect(data[FrameName][i][0]*VideoShowW, data[FrameName][i][1]*VideoShowH+add[0] , data[FrameName][i][2]*VideoShowW, data[FrameName][i][3]*VideoShowH, i);
-                        this.CreateButton(i);
-                }
-            }else{
-                for (let i = 0; i < data[FrameName].length; i++) {
-                        this.CreaRect(data[FrameName][i][0]*VideoShowW+add[1], data[FrameName][i][1]*VideoShowH , data[FrameName][i][2]*VideoShowW, data[FrameName][i][3]*VideoShowH, i);
-                        this.CreateButton(i);
-                }
-            }
-        }
-    }
-
-    GetVideoShowPar(VideW, VideH){
-        if(VideW>VideH){
-            this.VideoShowW = this.Layer.width();
-            this.VideoShowH = VideH/VideW * this.VideoShowW;
-            this.Add = [(this.Layer.height() - this.VideoShowH)/2,0];
-        }else{
-            this.VideoShowH = this.Layer.height();
-            this.VideoShowW = VideW/VideH* this.VideoShowH;
-            this.Add = [0,(this.Layer.height() - this.VideoShowH)/2];
-        }
-    }
-
-    //create rectagle
-    CreaRect(x, y, width, height, id){
-        var rect = new Konva.Rect({
-            x: x,
-            y: y,
-            width: width,
-            height: height,
-            fill: "rgba(14, 136, 233, 0.3)",
-            name: "rect"+id,
-            draggable: false,
-            opacity: 1,
-        });
-        this.Layer.add(rect);
-    }
-
-    CreateButton(id){
-        var label_button = document.createElement("button");
-        label_button.setAttribute('class',"list-group-item list-group-item-action");
-        label_button.textContent = "Rect" + (id+1);
-        label_button.setAttribute('name', "rect"+id);
-
-        this.ButtCont.appendChild(label_button);
-    }
-
-    ClearAnno(){
-        if (this.Layer.hasChildren()) {
-          this.ButtCont.innerHTML = '';
-          //this.Layer.removeChildren();
-          var Rect = this.Layer.getChildren(function(node){
-            return node.getClassName() === 'Rect';
-          });
-          if (Rect.length){
-            for(let i = 0; i < Rect.length; i++){
-                Rect[i].destroy();
-            }
-          }
-          var Transformer = this.Layer.getChildren(function(node){
-            return node.getClassName() === 'Transformer';
-          });
-          if (Rect.length){
             Transformer[0].nodes([]);
           }
         }
@@ -710,125 +601,6 @@ class ListenerKeypointImage extends Listener{
     }
 }
 
-class ListenerRectVideo extends Listener{
-    constructor(AnnoType, Data, Stage, Layer, CurrentFrame = 0, ButtCont, ShowClass) {
-        super(AnnoType, Data, Stage, Layer);
-        this.CurrentFrame = CurrentFrame;
-        this.ButtCont = ButtCont;
-        this.ShowClass = ShowClass;
-        this.Transformer = new Konva.Transformer({
-                                    rotateEnabled:false,
-                                    centeredScaling: false,
-                                    resizeEnabled: true,
-                                    keepRatio: false,
-                                    enabledAnchors: [
-                                      'top-left',
-                                      'top-right',
-                                      'bottom-left',
-                                      'bottom-right',
-                                    ],
-                                    ignoreStroke: true,
-                                    borderDash: [3, 3],
-                                });
-        this.Layer.add(this.Transformer);
-        this.ActiveButton;
-    }
-
-    StartStageListener(){
-        var transformer = this.Transformer;
-        var Stage = this.Stage;
-        var Data = this.Data;
-        var FrameName = "frame_" + this.CurrentFrame;
-
-        var RelatedButton = this.ActiveButton;
-
-        this.DragListener(Stage, Data, FrameName);
-
-        var VideoShowW = this.ShowClass.VideoShowW;
-        var VideoShowH = this.ShowClass.VideoShowH;
-        var add = this.ShowClass.Add;
-
-        // clicks should select/deselect shapes
-        this.Stage.on('click tap', function (e) {
-        // if click on empty area - remove all selections
-            if (e.target === Stage) {
-                transformer.nodes([]);
-                var Rect = transformer.nodes();
-                if (Rect.length){
-                    Rect[0].off('transformend');
-                }
-                return;
-            }
-            // do nothing if clicked NOT on our rectangles
-            if (e.target.getClassName() === 'Rect') {
-                transformer.nodes([]);
-                transformer.nodes([e.target]);
-
-                var Rect = e.target;
-                Rect.draggable(true);
-
-                if(RelatedButton){
-                    RelatedButton.setAttribute('class',"list-group-item list-group-item-action");
-                }
-                RelatedButton = document.getElementsByName(Rect.getAttr('name'))[0];
-                RelatedButton.setAttribute('class',"list-group-item list-group-item-action active");
-
-                Rect.on('transformend', function () {
-                    var id = Rect.getAttr('name').replace("rect","");
-                    var width = Rect.width() * Rect.scaleX() / Stage.width();
-                    var height = Rect.height() * Rect.scaleY() / Stage.height();
-                    if(add[0]){
-                        var xStart = Rect.x() / VideoShowW;
-                        var yStart = (Rect.y() - add[0]) / VideoShowH;
-                        Data[FrameName][id]= [xStart, yStart, width, height];
-                    }else{
-                        var xStart = (Rect.x() - add[1]) / VideoShowW;
-                        var yStart = Rect.y() / VideoShowH;
-                        Data[FrameName][id]= [xStart, yStart, width, height];
-                    }
-                });
-            }
-        });
-    }
-
-    StopStageListener(){
-        //stop shape listening
-        this.Stage.off('click tap');
-    }
-
-    DragListener(Stage, Data, FrameName){
-        // Add drag listener
-        var Rect = this.Layer.getChildren(function(node){
-            return node.getClassName() === 'Rect';
-          });
-        if (Rect.length){
-            var VideoShowW = this.ShowClass.VideoShowW;
-            var VideoShowH = this.ShowClass.VideoShowH;
-            var add = this.ShowClass.Add;
-            for(let i = 0; i < Rect.length; i++){
-                Rect[i].on('dragend', function (e) {
-                    var id = e.target.getAttr('name').replace("rect","");
-                    var width = e.target.width() * e.target.scaleX() / VideoShowW;
-                    var height = e.target.height() * e.target.scaleY() / VideoShowH;
-                    if(add[0]){
-                        var xStart = e.target.x() / VideoShowW;
-                        var yStart = (e.target.y() - add[0]) / VideoShowH;
-                        Data[FrameName][id]= [xStart, yStart, width, height];
-                    }else{
-                        var xStart = (e.target.x() - add[1]) / VideoShowW;
-                        var yStart = e.target.y() / VideoShowH;
-                        Data[FrameName][id]= [xStart, yStart, width, height];
-                    }
-                });
-            }
-        }
-    }
-
-    ReturnTransformer(){
-    return this.Transformer;
-    }
-}
-
 class ShapeDeletor{
     constructor(AnnoType, Data, Stage, Layer, Transformer) {
         this.AnnoTypeCSS = AnnoType;
@@ -866,26 +638,6 @@ class ShapeDeletorKeypointImage extends ShapeDeletor{
                 }
             }
             group.destroy();
-            this.ShowClass.ShowData();
-        }
-    }
-}
-
-class ShapeDeletorRectVideo extends ShapeDeletor{
-    constructor(AnnoType, Data, Stage, Layer, Transformer, CurrentFrame = 0, ButtCont, ShowClass) {
-        super(AnnoType, Data, Stage, Layer, Transformer);
-        this.CurrentFrame = CurrentFrame;
-        this.ButtCont = ButtCont;
-        this.ShowClass = ShowClass;
-    }
-
-    DeleteShape(){
-        var SelectedShape = this.Transformer.nodes();
-        if(SelectedShape.length){
-            var FrameName = "frame_" + this.CurrentFrame;
-            var id = SelectedShape[0].getAttr('name').replace("rect","");
-            this.Data[FrameName].splice(id, 1);
-            SelectedShape[0].destroy();
             this.ShowClass.ShowData();
         }
     }

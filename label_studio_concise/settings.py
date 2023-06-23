@@ -150,3 +150,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR,"media")
 MEDIA_URL = "/media/"
 
 ASGI_APPLICATION = 'label_studio_concise.asgi.application'
+
+#STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'

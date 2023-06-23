@@ -14,4 +14,7 @@ urlpatterns = [
     path('<int:pk>/UploadJson', views.UploadJson, name='UploadJson'),
     path('<int:pk>/Training', views.ModelTraining, name = 'ModelTraining'),
     path('<int:pk>/Checking', views.Checking, name = 'Checking'),
+    path('<int:pk>/rect/', views.rectLabeling, name='rect_annotation'),
+    path('<int:pk>/keypoint/', views.project_list_data, name='keypoint_annotation'),
+    path('<int:pk>/polygon/', views.polygonLabeling, name='polygon_annotation'),  
 ]

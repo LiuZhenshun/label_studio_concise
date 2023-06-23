@@ -7,6 +7,20 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 from AiServer.AiServerHandler import train_model
 
+train_json = {
+        "basenet": 'vgg16_reducedfc.pth',
+        "batch_size": 16,
+        "resume": None,
+        "num_workers": 4,
+        "cuda": True,
+        "lr": 0.001,
+        "momentum": 0.9,
+        "weight_decay": 5e-4,
+        "gamma": 0.1,
+        "multigpu": True,
+        "save_folder": './AiServer/Pyramidbox/weights/'
+    }
+
 class TrainingConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
@@ -25,7 +39,8 @@ class TrainingConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def _train_model_async(self):
-        return train_model(self.send_training_update, self.trainingInfor)
+        #return train_model(self.send_training_update, self.trainingInfor)
+        return train_model(self.send_training_update, train_json)
     
     def send_training_update(self, message):
         # This method will be called by the train_model function to send messages to the frontend

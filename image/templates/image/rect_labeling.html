@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 
-
 {% block css_header %}
    .my_padding {
     padding: 10px;
@@ -42,7 +41,7 @@
             </div>
             <form method="post" enctype="multipart/form-data">
                 <div class="modal-body">
-                    git
+                    {% csrf_token %}
                     {% for field in form %}
                     <div class="container-fluid my_padding">{{ field.label }} : {{field}}</div>
                     {%endfor%}
@@ -106,26 +105,21 @@
         <button id="InvisibleButton" class="btn btn-outline-success" type="submit">Invisible</button>
         <button id="DeleteKeypointButton" class="btn btn-outline-danger">DeleteKeypoint</button>
     </div>
-    <div class="container-fluid">
-        <div class="border border-primary">
-            <img id="imageContainerChecking" style="position:absolute; width:400px; height:280px;">
-        </div>
-    </div>
 
 </div>
 {% endblock %}
 
 {% block javascript_content %}
-<script src="{% static 'ShapeCreator/ShapeCreator_MerageButton.js' %}"></script>
+<script src="{% static 'ShapeCreator/image/ShapeCreatorRect.js' %}"></script>
 <script type="text/javascript">
 
 // image document object
 let image = document.getElementById("imageContainer");
-let image2 = document.getElementById("imageContainerChecking");
 var image_width, image_height, image_show_w, image_show_h;
 
 // document to add label button
 var annotation_label_container  = document.getElementById("label_container");
+
 
 // Document object
 var canvas = document.getElementById("myCanvas");
@@ -140,13 +134,26 @@ var kStage = new Konva.Stage({
 });
 var kLayer = new Konva.Layer();
 kStage.add(kLayer);
+Ktransformer = new Konva.Transformer({
+                                    rotateEnabled:false,
+                                    centeredScaling: false,
+                                    resizeEnabled: true,
+                                    keepRatio: false,
+                                    enabledAnchors: [
+                                      'top-left',
+                                      'top-right',
+                                      'bottom-left',
+                                      'bottom-right',
+                                    ],
+                                    ignoreStroke: true,
+                                    borderDash: [3, 3],
+                                });
 
-var VisObj = new VisualizatorKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container);
-var ListenerObj = new ListenerKeypointImage("Keypoint", data, kStage, kLayer, annotation_label_container, VisObj, SkipButton, InvisibleButton, DeleteKeypointButton);
-var CreaAnnoObj = new CreaAnnoKeypointImage("Keypoint",  data, kStage, kLayer, VisObj, ListenerObj);
-var SaveObj = new SaveDataKeypointImage("Keypoint", data, kStage);
-var kTransformer = ListenerObj.ReturnTransformer();
-var ShapeDeletorObj = new ShapeDeletorKeypointImage("Keypoint", data, kStage, kLayer, kTransformer, VisObj);
+var VisObj = new VisualizatorRectImage("Rect", data, kStage, kLayer, annotation_label_container);
+var ListenerObj = new ListenerRectImage("Rect", data, kStage, kLayer, annotation_label_container, Ktransformer);
+var CreaAnnoObj = new CreaAnnoRectImage("Rect",  data, kStage, kLayer);
+var SaveObj = new SaveDataRectImage("Rect", data, kStage);
+var ShapeDeletorObj = new ShapeDeletorRectImage("Keypoint", data, kStage, kLayer,Ktransformer);
 
 //label data
 var data;
@@ -156,21 +163,31 @@ $("#btnAddData").click(function () {
 });
 
 $(btnExport).click(function (){
-window.location.href = window.location.href + "export";
+    window.location.href = window.location.href + "export";
 })
 
-$(btnDeleteProject).click(function (){
-window.location.href = window.location.href + "delete";
+$(btnExport).click(function (){
+    window.location.href = window.location.href + "export";
 })
 
 $("#btnImportJson").click(function () {
     $('#staticBackImportJson').modal('show');
 });
 
-$("#createAnno").attr('onClick', 'CreaAnnoObj.StarCrea()');
+$("#createAnno").attr('onClick', 'StartCreate()');
 
 $("#deleteAnno").attr('onClick', 'ShapeDeletorObj.DeleteShape()');
 $("#submitData").attr('onClick', 'submit_label()');
+
+document.addEventListener('annotation-end', function() {
+  ListenerObj.StartStageListener();
+  VisObj.ShowData();
+});
+
+function StartCreate(){
+    ListenerObj.StopStageListener();
+    CreaAnnoObj.StarCrea();
+}
 
 function Highlight_data_item(button) {
    if(data){
@@ -180,10 +197,6 @@ function Highlight_data_item(button) {
    $(".col-2 .active").removeClass("active");
    $(button).addClass("active");
    image.src = "/media/" + button.textContent;
-   image2.src = "/media/" +
-   button.textContent.substr(0, button.textContent.lastIndexOf('/')) +
-   "/rgb/" +
-   button.textContent.substr(button.textContent.lastIndexOf('/')+1, button.textContent.length - 1).replace('thermal', 'rgb');
    $.ajax({
             url: '/Image/ajax_getdata',
             type: "get",
@@ -192,7 +205,6 @@ function Highlight_data_item(button) {
             },
             dataType: "JSON",
             success: function (res) {
-                ListenerObj.StopStageListener();
                 data = res.data;
                 image_width = res.image_info["width"];
                 image_height = res.image_info["height"];
@@ -202,11 +214,10 @@ function Highlight_data_item(button) {
                 }
                 CreaAnnoObj.Data = data;
                 VisObj.Data = data;
-                VisObj.ShowData();
-                ListenerObj.Data = data;
-                ListenerObj.StartStageListener();
                 SaveObj.Data = data;
                 ShapeDeletorObj.Data = data;
+                VisObj.ShowData();
+                ListenerObj.StartStageListener();
             }
         })
 }

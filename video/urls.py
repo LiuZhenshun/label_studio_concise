@@ -10,4 +10,5 @@ urlpatterns = [
     path('ajax_getdata/', views.ajax_getdata,  name='get_data'),
     path('ajax_submitdata/',views.ajax_submitdata,  name='get_data'),
     path('<int:pk>/ajax_delete_item', views.ajax_delete_item, name='delete_item'),
+    path('<int:pk>/polygon', views.polygonLabeling, name='polygon_labeling')
 ]
