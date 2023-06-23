@@ -374,7 +374,7 @@ class VisualizatorRectVideo extends Visualizator{
         var add = this.Add;
         
         if (data == null){
-            data == {};
+            data = {};
         }
         if (FrameName in data){
             if(add[0]){
