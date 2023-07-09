@@ -103,6 +103,7 @@
 <!--<script src="https://unpkg.com/konva@8/konva.min.js"></script>-->
 
 <script type="text/javascript">
+
 // video document object
 let video = document.getElementById("videoContainer");
 var video_width, video_height, video_show_w, video_show_h, add;
@@ -268,19 +269,27 @@ if (video.paused) {
   }
 }
 
+function clear_anno(){
+VisObj.ShowData();
+
+}
+
 video.ontimeupdate = function() {
 if (video.paused == false){
     if (x.value != Math.floor(video.currentTime / video.duration * x.max)){
         x.value = Math.floor(video.currentTime / video.duration * x.max)
-        clear_anno();
-        current_frame = x.value * $("#current_interval")[0].value;
+        //clear_anno();
+        current_frame = x.value * 10;
         frame_num.textContent = current_frame;
         frame_name = "frame_" + current_frame;
         if (frame_name in data){
-            for (let i = 0; i < data[frame_name].length; i++) {
-                data_label = data[frame_name][i];
-                create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
-            }
+            //for (let i = 0; i < data[frame_name].length; i++) {
+                //data_label = data[frame_name][i];
+                //create_label(data_label[0]*video_show_w, data_label[1]*video_show_h + add , data_label[2]*video_show_w, data_label[3]*video_show_h);
+                //VisObj.ShowData();
+            //}
+            ResetObjParameter(ObjSet, current_frame);
+            VisObj.ShowData();
         }
 
     }
