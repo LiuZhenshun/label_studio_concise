@@ -92,6 +92,7 @@
         <button class="btn btn-outline-success" type="submit" onclick="play()">Play/Pause</button>
         <button class="btn btn-outline-success" type="submit" onclick="mute()">Mute/Unmute</button>
         <button class="btn btn-outline-success" type="submit" onclick="playrate()">x2</button>
+        <button class="btn btn-outline-success" type="submit" onclick="startInference()">Inference</button>
     </div>
 
 </div>
@@ -311,6 +312,34 @@ socket.onmessage = function (event){
 function set_interval(){
     $("#total_frame_num")[0].textContent = total_frame_num + "/";
     x.max = Math.floor( total_frame_num / 10);
+}
+
+// Websocket
+var socket = new WebSocket("ws://" + window.location.host + "/ws");
+
+// Connection is open
+socket.onopen = (event) => {
+// Send a message to start training
+    console.log("Websocket connect to", "ws://" + window.location.host + "/ws");
+};
+
+// Listen for messages
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log(data.message);
+};
+
+// Connection is closed
+socket.onclose = (event) => {
+    console.error('Training socket closed');
+};
+
+function startInference(){
+    socket.send(JSON.stringify({
+        'message': 'start_inference',
+        'path': video.src,
+        'trainingInfor':{'OpM':0, 'LR':0.01},
+    }));
 }
 
 </script>

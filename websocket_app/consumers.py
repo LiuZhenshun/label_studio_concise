@@ -6,6 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from AiServer.AiServerHandler import train_model
+from AiServer.AiServerHandler import inference_model
 
 train_json = {
         # "basenet": 'vgg16_reducedfc.pth',
@@ -22,6 +23,12 @@ train_json = {
         "save_folder": './AiServer/Pyramidbox/weights/'
     }
 
+inferenceJson = {
+    "input_path": "./Pyramidbox/test_custom_videos/",
+    "interval": 10,
+    "output_path": "./AiServer/Pyramidbox/test_custom_videos_results",
+}
+
 class TrainingConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
@@ -37,11 +44,21 @@ class TrainingConsumer(AsyncWebsocketConsumer):
         # Start the training task
         if message == 'start_training':
             await self.start_training()
+        elif message == 'start_inference':
+            path = text_data_json['path']
+            path = path.replace('http://127.0.0.1:8000/', "")
+            inferenceJson["input_path"] = path
+            await self.startInference()
+
 
     @database_sync_to_async
     def _train_model_async(self):
         #return train_model(self.send_training_update, self.trainingInfor)
         return train_model(self.send_training_update, train_json)
+
+    @database_sync_to_async
+    def _inference_model_async(self ):
+        return inference_model(self.send_training_update, inferenceJson)
     
     def send_training_update(self, message):
         # This method will be called by the train_model function to send messages to the frontend
@@ -56,3 +73,8 @@ class TrainingConsumer(AsyncWebsocketConsumer):
         await self._train_model_async()
 
         await self.send(json.dumps({'message': 'Training completed'}))
+
+    async def startInference(self):
+        await self.send(json.dumps({'message': 'StartInference'}))
+
+        await self._inference_model_async()
