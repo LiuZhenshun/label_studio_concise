@@ -70,6 +70,7 @@ def project_list_data(request,pk):
         }
     if request.method == "GET":
         return render(request, 'video/video_test.html', context)
+        # return render(request, 'video/show_data_items.html', context)
 
     form = DataForm(data = request.POST, files= request.FILES)
 
@@ -88,6 +89,7 @@ def project_list_data(request,pk):
     if form.is_valid():
         form.save()
         form.instance.filename
+        # return render(request, 'video/show_data_items.html',context)
 
         return render(request, 'video/video_test.html',context)
     print(form.errors)

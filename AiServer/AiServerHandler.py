@@ -9,7 +9,8 @@ def train_model(callback, json):
 
 def inference_model(callback, json):
     # Pyramidbox.fddb_test.test(callback, json)
-    test.test_customize(callback, json)
+
+    return test.test_customize(callback, json)
 
 
 if __name__ == "__main__":

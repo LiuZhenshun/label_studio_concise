@@ -325,8 +325,11 @@ socket.onopen = (event) => {
 
 // Listen for messages
 socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log(data.message);
+    const wsData = JSON.parse(event.data);
+    console.log(wsData.message);
+    if (wsData.message == "Inference completed"){
+        data = wsData.result;
+    }
 };
 
 // Connection is closed

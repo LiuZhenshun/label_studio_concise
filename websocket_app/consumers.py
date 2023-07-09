@@ -77,4 +77,8 @@ class TrainingConsumer(AsyncWebsocketConsumer):
     async def startInference(self):
         await self.send(json.dumps({'message': 'StartInference'}))
 
-        await self._inference_model_async()
+        jsonResult = await self._inference_model_async()
+
+        await self.send(json.dumps({'message': 'Inference completed',
+                                    'result': jsonResult
+                                    }))
