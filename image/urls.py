@@ -16,5 +16,6 @@ urlpatterns = [
     path('<int:pk>/Checking', views.Checking, name = 'Checking'),
     path('<int:pk>/rect/', views.rectLabeling, name='rect_annotation'),
     path('<int:pk>/keypoint/', views.project_list_data, name='keypoint_annotation'),
-    path('<int:pk>/polygon/', views.polygonLabeling, name='polygon_annotation'),  
+    path('<int:pk>/polygon/', views.polygonLabeling, name='polygon_annotation'),
+    path('<int:pk>/polygon/export', views.data_polygon_export, name='data_export'),
 ]

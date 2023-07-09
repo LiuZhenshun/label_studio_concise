@@ -251,6 +251,14 @@ def data_export(request,pk):
         outfile.write(JsonObject)
 
     return HttpResponseRedirect('/Image/{}'.format(pk))
+
+
+def data_polygon_export(request,pk):
+    imageOjects = Image.objects.filter(project_id = pk)
+    JsonObj = JsonCreator("polygon", imageOjects)
+    JsonData = JsonObj.OutputJson()
+    return HttpResponseRedirect('/Image/{}/polygon'.format(pk))
+
 # def data_export(request,pk):
 #     imageOjects = Image.objects.filter(project_id = pk)
 #     path = os.path.join(os.getcwd(),'export')

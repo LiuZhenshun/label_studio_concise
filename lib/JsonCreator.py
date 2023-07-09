@@ -8,6 +8,12 @@ class JsonCreator:
     def OutputJson(self):
         if self.DataFormate == "coco":
             return self.CocoJsonCreator("keypoint")
+        elif self.DataFormate == "polygon":
+            return self.PolygonJsonCreator("dsahjkadhjka")
+
+    def PolygonJsonCreator(self, DataType):
+        print("Calling polygon creation function")
+        return {}
 
     def CocoJsonCreator(self, DataType):
         JsonData = {}
