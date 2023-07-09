@@ -8,16 +8,17 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from AiServer.AiServerHandler import train_model
 
 train_json = {
-        "basenet": 'vgg16_reducedfc.pth',
-        "batch_size": 16,
-        "resume": None,
-        "num_workers": 4,
-        "cuda": True,
+        # "basenet": 'vgg16_reducedfc.pth',
+        "batch_size": 1,
+        "epochs": 10,
+        # "resume": None,
+        # "num_workers": 4
+        # "cuda": True,
         "lr": 0.001,
         "momentum": 0.9,
-        "weight_decay": 5e-4,
-        "gamma": 0.1,
-        "multigpu": True,
+        # "weight_decay": 5e-4,
+        # "gamma": 0.1,
+        # "multigpu": True,
         "save_folder": './AiServer/Pyramidbox/weights/'
     }
 

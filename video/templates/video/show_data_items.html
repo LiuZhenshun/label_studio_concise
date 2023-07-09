@@ -177,6 +177,9 @@ function Highlight_data_item(button) {
                 video_show_w = 950;
                 video_show_h = video_height/video_width*950;
                 add = (550 - video_show_h)/2;
+                if (data == null){
+                    data ={};
+                }
 
                 if (frame_name in data){
                     for (let i = 0; i < data[frame_name].length; i++) {
