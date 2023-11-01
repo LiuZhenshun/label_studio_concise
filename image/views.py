@@ -295,7 +295,7 @@ def UploadJson(request,pk):
             Annotations = coco.GetAnnotation(ImageId=ImageIndex)
             CocoImage = coco.GetImages(ImageIndex)
             data, image_info = coco.Coco2DatabaseFormat(Image=CocoImage, Annotations=Annotations)
-            filename = os.path.join("project_{}".format(pk),CocoImage["file_name"])
+            filename = os.path.join("project_{}".format(pk),CocoImage["file_name"]).replace("\\", "/")
             Image.objects.filter(filename = filename, project_id = pk).update(data = data, image_info = image_info)
     return HttpResponseRedirect('/Image/{}'.format(pk))
 
